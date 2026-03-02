@@ -2,6 +2,22 @@ import { Response } from 'express';
 import { db } from '../db';
 import { AuthRequest } from '../middleware/auth';
 
+export function getAccounts(req: AuthRequest, res: Response) {
+  const accounts = db.prepare(
+    'SELECT id, accountNumber, balance, currency, type FROM fin_accounts WHERE userId = ?'
+  ).all(req.user!.id) as any[];
+
+  return res.json({
+    accounts: accounts.map(a => ({
+      id: a.id,
+      accountNumber: a.accountNumber,
+      balance: a.balance / 100,
+      currency: a.currency,
+      type: a.type,
+    })),
+  });
+}
+
 export function getAccount(req: AuthRequest, res: Response) {
   const { id } = req.params;
   const account = db.prepare('SELECT * FROM fin_accounts WHERE id = ?').get(id) as any;

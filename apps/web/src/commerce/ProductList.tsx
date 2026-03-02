@@ -26,8 +26,13 @@ export default function ProductList() {
       <div style={grid}>
         {products.map(p => (
           <div key={p.id} style={card}>
-            <div style={{ height: 160, background: '#f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#aaa', fontSize: '0.85rem' }}>
-              {p.imageUrl ? <img src={p.imageUrl} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : 'Image unavailable'}
+            <div style={{ height: 160, background: '#e8e8e8', overflow: 'hidden', flexShrink: 0 }}>
+              <img
+                src={p.imageUrl}
+                alt={p.name}
+                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                onError={e => { (e.target as HTMLImageElement).src = `https://picsum.photos/seed/${p.id}/400/160`; }}
+              />
             </div>
             <div style={{ padding: '1rem', flex: 1, display: 'flex', flexDirection: 'column' }}>
               <div style={{ fontWeight: 600, marginBottom: '0.25rem' }}>{p.name}</div>
