@@ -1,0 +1,48 @@
+{
+  "name": "nexacore",
+  "private": true,
+  "workspaces": ["apps/api", "apps/web"],
+  "scripts": {
+    "dev:api": "npm run dev --workspace=apps/api",
+    "dev:web": "npm run dev --workspace=apps/web",
+    "dev": "concurrently \"npm run dev:api\" \"npm run dev:web\"",
+    "seed": "npm run seed --workspace=apps/api",
+    "build:api": "npm run build --workspace=apps/api",
+    "test:contracts:finance": "vitest run tests/finance/contracts",
+    "test:contracts:health": "vitest run tests/health/contracts",
+    "test:contracts:commerce": "vitest run tests/commerce/contracts",
+    "test:api:finance": "vitest run tests/finance/api",
+    "test:api:health": "vitest run tests/health/api",
+    "test:api:commerce": "vitest run tests/commerce/api",
+    "test:e2e:finance": "playwright test tests/finance/ui",
+    "test:e2e:health": "playwright test tests/health/ui",
+    "test:e2e:commerce": "playwright test tests/commerce/ui",
+    "test:a11y": "playwright test tests/health/accessibility tests/commerce/accessibility",
+    "test:lighthouse": "vitest run tests/commerce/performance tests/health/accessibility/lcp.spec.ts",
+    "triage:analyze": "tsx ai/triage-engine/analyze.ts",
+    "cost:report": "tsx ai/triage-engine/cost-report.ts",
+    "lighthouse:to-pdf": "tsx scripts/lighthouse-to-pdf.ts"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.41.2",
+    "@axe-core/playwright": "^4.8.4",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/better-sqlite3": "^7.6.8",
+    "@types/jsonwebtoken": "^9.0.5",
+    "@types/node": "^20.11.5",
+    "@types/supertest": "^6.0.2",
+    "@types/uuid": "^9.0.7",
+    "bcryptjs": "^2.4.3",
+    "better-sqlite3": "^9.4.3",
+    "concurrently": "^8.2.2",
+    "jsonwebtoken": "^9.0.2",
+    "supertest": "^6.3.4",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3",
+    "uuid": "^9.0.0",
+    "vitest": "^1.2.2"
+  },
+  "dependencies": {
+    "decimal.js": "^10.4.3"
+  }
+}
