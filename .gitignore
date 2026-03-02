@@ -1,0 +1,16 @@
+node_modules/
+dist/
+data/
+*.db
+*.db-shm
+*.db-wal
+.env
+.env.local
+artifacts/
+test-results/
+playwright-report/
+coverage/
+pact/
+.pact/
+apps/web/dist/
+apps/web/.vite/
