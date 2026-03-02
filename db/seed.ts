@@ -129,24 +129,24 @@ function seed() {
   // BUG COM-006: prices stored as REAL — floating point drift can occur
   db.prepare(`INSERT INTO com_products (id, name, description, price, inventory, imageUrl) VALUES (?, ?, ?, ?, ?, ?)`).run(
     productIds.shoes, 'Running Shoes V2', 'Lightweight responsive running shoe, neutral cushioning', 89.99, 47,
-    '/images/running-shoes-v2.jpg'
+    'https://picsum.photos/seed/running-shoes/400/260'
   );
   db.prepare(`INSERT INTO com_products (id, name, description, price, inventory, imageUrl) VALUES (?, ?, ?, ?, ?, ?)`).run(
     productIds.jacket, 'Waterproof Trail Jacket', '3-layer Gore-Tex shell, seam-sealed, packable', 149.99, 23,
-    '/images/trail-jacket.jpg'
+    'https://picsum.photos/seed/trail-jacket/400/260'
   );
   db.prepare(`INSERT INTO com_products (id, name, description, price, inventory, imageUrl) VALUES (?, ?, ?, ?, ?, ?)`).run(
     productIds.bag, 'Technical Backpack 28L', 'Hydration-compatible, laptop sleeve, weatherproof', 74.95, 31,
-    '/images/technical-backpack.jpg'
+    'https://picsum.photos/seed/backpack-28l/400/260'
   );
   db.prepare(`INSERT INTO com_products (id, name, description, price, inventory, imageUrl) VALUES (?, ?, ?, ?, ?, ?)`).run(
     productIds.watch, 'GPS Sport Watch', 'Multi-sport GPS, heart rate, 24-hour battery', 199.99, 12,
-    '/images/gps-sport-watch.jpg'
+    'https://picsum.photos/seed/gps-watch/400/260'
   );
   // Single-unit item — used for concurrent purchase race condition test (COM-002)
   db.prepare(`INSERT INTO com_products (id, name, description, price, inventory, imageUrl) VALUES (?, ?, ?, ?, ?, ?)`).run(
     'PROD-999', 'Limited Edition Cap', 'Last one in stock — signed by the team', 29.99, 1,
-    '/images/limited-cap.jpg'
+    'https://picsum.photos/seed/limited-cap/400/260'
   );
 
   db.prepare(`INSERT INTO com_promotions (id, code, discountType, discountValue, maxUses) VALUES (?, ?, ?, ?, ?)`).run(

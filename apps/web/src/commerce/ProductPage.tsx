@@ -24,8 +24,13 @@ export default function ProductPage() {
 
   return (
     <div style={{ background: '#fff', borderRadius: 8, padding: '2rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', maxWidth: 600 }}>
-      <div style={{ height: 260, background: '#f5f5f5', borderRadius: 6, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#aaa' }}>
-        Product image
+      <div style={{ height: 260, borderRadius: 6, marginBottom: '1.5rem', overflow: 'hidden', background: '#e8e8e8' }}>
+        <img
+          src={product.imageUrl || `https://picsum.photos/seed/${product.id}/600/260`}
+          alt={product.name}
+          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+          onError={e => { (e.target as HTMLImageElement).src = `https://picsum.photos/seed/${product.id}/600/260`; }}
+        />
       </div>
 
       <h1 data-testid="product-title" style={{ marginTop: 0 }}>{product.name}</h1>
