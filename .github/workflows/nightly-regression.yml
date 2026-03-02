@@ -1,0 +1,176 @@
+name: Nightly Regression — All Domains
+
+on:
+  schedule:
+    - cron: '0 2 * * 1-5'
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+
+jobs:
+  contract-tests:
+    name: Contract Tests (${{ matrix.domain }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        domain: [finance, health, commerce]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run test:contracts:${{ matrix.domain }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: contract-results-${{ matrix.domain }}
+          path: results/contracts/${{ matrix.domain }}/
+
+  api-tests:
+    name: API Tests — ${{ matrix.domain }}
+    needs: contract-tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        domain: [finance, health, commerce]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Run ${{ matrix.domain }} API tests
+        run: npm run test:api:${{ matrix.domain }} -- --reporter=verbose --reporter=junit --outputFile=results/api/${{ matrix.domain }}/junit.xml
+        env:
+          DB_PATH: ':memory:'
+          JWT_SECRET: ${{ secrets.JWT_SECRET || 'ci-test-secret' }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: api-results-${{ matrix.domain }}
+          path: results/api/${{ matrix.domain }}/junit.xml
+
+  e2e-tests:
+    name: E2E — ${{ matrix.domain }} (shard ${{ matrix.shard }}/2)
+    needs: api-tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        domain: [finance, health, commerce]
+        shard: [1, 2]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Seed database and start server
+        run: |
+          npm run seed
+          npm run dev:api &
+          npm run dev:web &
+          npx wait-on http://localhost:3001/health http://localhost:3000 --timeout 30000
+        env:
+          NODE_ENV: test
+      - name: Run E2E (sharded)
+        run: |
+          npx playwright test tests/${{ matrix.domain }}/ui \
+            --shard=${{ matrix.shard }}/2 \
+            --reporter=junit,html
+        env:
+          BASE_URL: http://localhost:3000
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: e2e-artifacts-${{ matrix.domain }}-${{ matrix.shard }}
+          path: |
+            test-results/
+            artifacts/
+
+  accessibility-tests:
+    name: Accessibility (WCAG 2.1 AA)
+    needs: api-tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Start servers
+        run: |
+          npm run seed
+          npm run dev:api &
+          npm run dev:web &
+          npx wait-on http://localhost:3001/health http://localhost:3000 --timeout 30000
+      - run: npm run test:a11y
+        env:
+          BASE_URL: http://localhost:3000
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: a11y-report
+          path: artifacts/a11y-report.json
+
+  lighthouse-audit:
+    name: Lighthouse Performance Gates
+    needs: e2e-tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Start servers
+        run: |
+          npm run seed
+          npm run dev:api &
+          npm run dev:web &
+          npx wait-on http://localhost:3001/health http://localhost:3000 --timeout 30000
+      - run: npm run test:lighthouse
+        env:
+          BASE_URL: http://localhost:3000
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: lighthouse-reports
+          path: artifacts/lighthouse/
+
+  post-run-analysis:
+    name: AI Triage + Cost Report
+    needs: [api-tests, e2e-tests, accessibility-tests]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: api-results-*
+          merge-multiple: true
+          path: results/api/
+      - name: Run AI triage engine
+        run: npm run triage:analyze
+        continue-on-error: true
+      - name: Generate CI cost report
+        run: npm run cost:report
+      - uses: actions/upload-artifact@v4
+        with:
+          name: triage-and-cost-reports
+          path: artifacts/
