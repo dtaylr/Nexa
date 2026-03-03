@@ -7,7 +7,6 @@ process.env.DB_PATH = ':memory:';
 process.env.JWT_SECRET = 'test-secret';
 process.env.NODE_ENV = 'test';
 
-// Import after setting env vars so the DB module uses in-memory storage
 import('../apps/api/src/db');
 
 let db: Database.Database;

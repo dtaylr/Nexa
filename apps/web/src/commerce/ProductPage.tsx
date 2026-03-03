@@ -5,6 +5,7 @@ export default function ProductPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [product, setProduct] = useState<any>(null);
+  const [added, setAdded] = useState(false);
 
   useEffect(() => {
     fetch(`/api/commerce/products/${id}`)
@@ -15,9 +16,15 @@ export default function ProductPage() {
 
   function addToBasket() {
     const cart = JSON.parse(localStorage.getItem('cart') || '[]');
-    cart.push({ productId: product.id, name: product.name, price: product.price, quantity: 1 });
+    const existing = cart.find((i: any) => i.productId === product.id);
+    if (existing) {
+      existing.quantity += 1;
+    } else {
+      cart.push({ productId: product.id, name: product.name, price: product.price, quantity: 1 });
+    }
     localStorage.setItem('cart', JSON.stringify(cart));
-    navigate('/cart');
+    setAdded(true);
+    setTimeout(() => navigate('/cart'), 500);
   }
 
   if (!product) return <p>Loading…</p>;
@@ -46,14 +53,17 @@ export default function ProductPage() {
 
       <button
         onClick={addToBasket}
-        disabled={product.inventory === 0}
+        disabled={product.inventory === 0 || added}
         style={{
-          marginTop: '1.5rem', width: '100%', background: '#e65100', color: '#fff',
-          border: 'none', padding: '0.9rem', borderRadius: 8, fontSize: '1rem', fontWeight: 600,
-          minHeight: 44,
+          marginTop: '1.5rem', width: '100%',
+          background: added ? '#2e7d32' : '#e65100',
+          color: '#fff', border: 'none', padding: '0.9rem', borderRadius: 8,
+          fontSize: '1rem', fontWeight: 600, minHeight: 44,
+          cursor: product.inventory === 0 || added ? 'not-allowed' : 'pointer',
+          transition: 'background 0.2s',
         }}
       >
-        Add to Basket
+        {added ? 'Added to basket!' : 'Add to Basket'}
       </button>
     </div>
   );
