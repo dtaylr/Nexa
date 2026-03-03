@@ -2,6 +2,18 @@ import { Response } from 'express';
 import { db } from '../db';
 import { AuthRequest } from '../middleware/auth';
 
+export function getMyPatient(req: AuthRequest, res: Response) {
+  const patient = db.prepare('SELECT * FROM hlt_patients WHERE userId = ?').get(req.user!.id) as any;
+  if (!patient) return res.status(404).json({ error: 'No patient record found for this account' });
+  return res.json({
+    id: patient.id,
+    firstName: patient.firstName,
+    lastName: patient.lastName,
+    nhsNumber: patient.nhsNumber,
+    dateOfBirth: patient.dateOfBirth,
+  });
+}
+
 export function getPatient(req: AuthRequest, res: Response) {
   const id = parseInt(req.params.id, 10);
 
