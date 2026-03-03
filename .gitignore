@@ -11,6 +11,7 @@ test-results/
 playwright-report/
 coverage/
 pact/
+results/
 .pact/
 apps/web/dist/
 apps/web/.vite/
