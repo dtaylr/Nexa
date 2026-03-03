@@ -1,13 +1,13 @@
 # NexaCore Platform
 
-A multi-domain quality engineering showcase built to demonstrate realistic SDET work across three industries: **Finance**, **Healthcare**, and **E-Commerce**.
+A multi-domain quality engineering showcase built to demonstrate SDET work across three industries: **Finance**, **Healthcare**, and **E-Commerce**.
 
 The platform is two things in one repo:
 
 1. **NexaCore** — a Node.js + Express API and React frontend that models real domain logic for each industry, including intentionally seeded bugs that mirror the failure modes these industries actually care about.
 2. **TestOps Intelligence** — the test suite, CI pipeline, and AI triage engine that runs against it.
 
-The point is not to test a toy app. Every bug, every test assertion, and every CI job maps to a real business risk in its domain.
+Every bug, every test assertion, and every CI job maps to a real business risk in its domain.
 
 ---
 
@@ -24,7 +24,7 @@ No external services, databases, or paid APIs required. Everything runs locally 
 
 ```bash
 npm install
-npm run seed       # creates data/nexacore.db with realistic fixture data
+npm run seed       # creates data/nexacore.db with fixture data
 npm run dev        # starts API on :3001 and web on :3000 concurrently
 ```
 
@@ -178,15 +178,85 @@ npx playwright test tests/commerce/ui
 
 ## Running the Full Test Suite
 
+### API Tests
+
 ```bash
-# All API tests across all domains
 npm run test:api:finance
 npm run test:api:health
 npm run test:api:commerce
+```
 
+### BDD — Cucumber / Gherkin
+
+Executable Gherkin scenarios live in `features/`. Run them against a live server:
+
+```bash
+npm run dev          # start API + web in background
+npm run test:bdd     # runs all .feature files, outputs HTML report to artifacts/
+```
+
+Feature files: `features/finance/transfer.feature`, `features/health/appointment.feature`, `features/commerce/checkout.feature`. Scenarios are written to be readable by non-engineers — each one maps directly to a seeded bug or business rule.
+
+### Contract Tests (Pact)
+
+Consumer-driven contract tests assert exact response shapes without a running server. They produce Pact files in `pacts/` that can be verified against the provider.
+
+```bash
+npm run test:contracts:finance    # transfer + accounts contracts
+npm run test:contracts:commerce   # order + payment contracts
+npm run test:contracts:health     # (placeholder — extend as needed)
+```
+
+Key assertions: Finance contracts enforce `auditId` presence (catches FIN-001) and the absence of `accountId` in 404 bodies (catches FIN-005). Commerce contracts enforce `emailQueued: false` at order creation time (catches COM-003).
+
+### Security Tests (OWASP API Top 10)
+
+```bash
+npm run test:security
+```
+
+Covers: IDOR cross-user access (API1), missing/malformed/expired/wrong-secret/`alg:none` tokens (API2), role escalation via registration (API5), SQL injection in login and transfer endpoints, path traversal, negative amounts, oversized payloads, and security headers from Helmet.
+
+### Mutation Testing (Stryker)
+
+Measures test suite quality by introducing code mutations and checking that at least one test fails for each. Requires no running server.
+
+```bash
+npm run test:mutation
+```
+
+Targets `apps/api/src/finance/`, `health/`, and `commerce/`. Thresholds: break at 60%, low at 70%, high at 85%. Reports written to `artifacts/mutation-report.html` and `artifacts/mutation-report.json`.
+
+### Load Tests (k6)
+
+End-of-month volume simulation for Finance and catalogue-browse simulation for Commerce. Requires k6 installed (`brew install k6` on macOS).
+
+```bash
+npm run seed && npm run dev:api &
+npm run test:load:finance    # ramps to 200 VUs, checks P95 < 500ms, audit ID presence, no account leakage
+npm run test:load:commerce   # ramps to 50 VUs, checks P95 < 200ms, price decimal accuracy
+```
+
+Results written to `artifacts/k6-finance-summary.json` and `artifacts/k6-commerce-summary.json`.
+
+### Visual Regression
+
+Captures PNG baselines and diffs on subsequent runs. Finance dashboard balance values are masked to avoid noise from dynamic data.
+
+```bash
+# First run — generates baselines in tests/visual/__snapshots__/
+npm run test:visual
+
+# Accept intentional design changes
+npm run test:visual:update
+```
+
+Viewports tested: desktop 1280×720 and mobile 390×844 (iPhone 14). Max pixel diff ratio: 2%.
+
+### E2E and Accessibility
+
+```bash
 # E2E (start dev servers first with `npm run dev`)
-npx playwright test tests/finance/ui
-npx playwright test tests/health/ui
 npx playwright test tests/commerce/ui
 
 # Accessibility (WCAG 2.1 AA)
@@ -203,7 +273,7 @@ After a test run that produces JUnit XML output, the triage engine classifies fa
 npm run triage:analyze
 ```
 
-Output is printed to stdout and written to `artifacts/triage-report.json`. Finance and healthcare CRITICAL failures set exit code 1 to block automated merges.
+Output is written to `artifacts/triage-report.json`. Finance and healthcare CRITICAL failures set exit code 1 to block automated merges. On pull requests the CI pipeline posts a summary comment with severity icons directly to the PR.
 
 ---
 
@@ -213,24 +283,27 @@ Output is printed to stdout and written to `artifacts/triage-report.json`. Finan
 npm run cost:report
 ```
 
-Produces `artifacts/cost-report.json` with estimated runner cost, total defects caught, and cost-per-defect for the current month. GitHub Actions public repo usage is free (2000 min/month); the report uses private repo pricing as a reference baseline.
+Produces `artifacts/cost-report.json` with estimated runner cost, total defects caught, and cost-per-defect for the current month. GitHub Actions public repo usage is free; the report uses private repo pricing as a reference baseline.
 
 ---
 
 ## CI Pipeline
 
-The nightly regression workflow (`.github/workflows/nightly-regression.yml`) runs on a schedule at 02:00 UTC Monday–Friday and on every pull request against `main`.
+The nightly regression workflow (`.github/workflows/nightly-regression.yml`) runs at 02:00 UTC Monday–Friday and on every pull request against `main`.
 
 ```
-contract-tests (per domain, parallel)
-  → api-tests (per domain, parallel)
-    → e2e-tests (per domain × 2 shards = 6 runners, parallel)
-    → accessibility-tests
-      → lighthouse-audit
-post-run-analysis (always, collects all JUnit results)
+Layer 1 — Contract tests (per domain, parallel, no server needed)
+  ↓
+Layer 2 — API tests + Security tests (per domain, parallel)
+  ↓
+Layer 3 — BDD + E2E (sharded 2×) + Accessibility + Visual regression (all parallel)
+  ↓
+Layer 4 — Load tests (k6, nightly/manual only — skipped on PRs)
+  ↓
+Layer 5 — AI triage + cost report (always runs, posts PR comment on pull_request events)
 ```
 
-Each domain fails independently — a health test failure does not suppress finance results.
+Each domain fails independently. Load tests use `continue-on-error: true` so a threshold breach surfaces in the report without blocking the pipeline.
 
 ---
 
@@ -246,4 +319,4 @@ Builds and starts the API on `:3001` and the web frontend on `:3000`. The API co
 
 ## Architecture Decisions
 
-See [docs/INTERVIEW_DECISIONS.md](docs/INTERVIEW_DECISIONS.md) for the reasoning behind every major choice in this project — database selection, monetary storage format, intentional bug implementation patterns, and test strategy choices.
+See [docs/INTERVIEW_DECISIONS.md](docs/INTERVIEW_DECISIONS.md) for the reasoning behind choices in this project — database selection, monetary storage format, intentional bug implementation patterns, and test strategy choices.
