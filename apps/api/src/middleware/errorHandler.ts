@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 
-export function errorHandler(err: any, req: Request, res: Response, next: NextFunction) {
+export function errorHandler(err: any, req: Request, res: Response, _next: NextFunction) {
   if (err.type === 'entity.parse.failed') {
     return res.status(400).json({ error: 'Invalid JSON' });
   }

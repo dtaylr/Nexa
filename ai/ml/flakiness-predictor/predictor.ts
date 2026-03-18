@@ -85,9 +85,12 @@ export class FlakinessPredictor {
 
     const { mean: passRate, stdDev } = betaStats(α, β);
 
-    // Flakiness: symmetric around 0.5, boosted by high variance
-    const baseFlakiness = 1 - Math.abs(2 * passRate - 1);
-    const varianceBoost = Math.min(stdDev * 4, 0.25);
+    // Flakiness: symmetric around 0.5, boosted by high variance.
+    // β starts at 1 (Laplace prior only) — it only exceeds 1 when actual failures
+    // are recorded. A test that has never failed should score near 0.
+    const hasActualFailures = β > 1;
+    const baseFlakiness = hasActualFailures ? 1 - Math.abs(2 * passRate - 1) : 0;
+    const varianceBoost = hasActualFailures ? Math.min(stdDev * 4, 0.25) : 0;
     const flakinessScore = Math.min(baseFlakiness + varianceBoost, 1);
 
     // Timing instability

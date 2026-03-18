@@ -22,7 +22,7 @@ test.describe('Finance — Transfer Flow', () => {
     await page.goto('/BrightBank/dashboard');
     await page.getByRole('link', { name: 'New Transfer' }).click();
 
-    await page.getByLabel('From account').selectOption({ label: /Current Account/ });
+    await page.getByLabel('From account').selectOption({ label: 'Current Account' });
     await page.getByLabel(/To account/).fill('GB29NWBK60161331926819');
     await page.getByLabel('Amount').fill('150.00');
     await page.getByLabel('Reference').fill('Rent - October');
