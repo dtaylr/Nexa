@@ -23,7 +23,7 @@ export function getAccount(req: AuthRequest, res: Response) {
   const account = db.prepare('SELECT * FROM fin_accounts WHERE id = ?').get(id) as any;
 
   if (!account) {
-    // BUG FIN-005: account ID is exposed in error response body
+    // BUG ACCOUNT_ID_DISCLOSURE: account ID is exposed in error response body
     return res.status(404).json({ error: 'Account not found', accountId: id });
   }
 
@@ -37,6 +37,23 @@ export function getAccount(req: AuthRequest, res: Response) {
     balance: account.balance / 100,
     currency: account.currency,
     type: account.type,
+  });
+}
+
+export function lookupAccount(req: AuthRequest, res: Response) {
+  const q = (req.query.q as string || '').trim();
+  if (q.length < 3) return res.status(400).json({ error: 'Query must be at least 3 characters' });
+
+  const accounts = db.prepare(
+    "SELECT id, accountNumber, type FROM fin_accounts WHERE accountNumber LIKE ? LIMIT 5"
+  ).all(`%${q}%`) as any[];
+
+  return res.json({
+    accounts: accounts.map(a => ({
+      id: a.id,
+      accountNumber: a.accountNumber,
+      type: a.type,
+    })),
   });
 }
 

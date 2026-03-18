@@ -1,0 +1,32 @@
+meta {
+  name: Add Item to Cart
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{baseUrl}}/api/commerce/cart/{{cartId}}/items
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{shopperToken}}
+}
+
+body:json {
+  {
+    "productId": "{{productId}}",
+    "quantity": 2
+  }
+}
+
+tests {
+  test("Status 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Item added confirmation", function() {
+    expect(res.getBody().added).to.equal(true);
+  });
+}

@@ -1,0 +1,17 @@
+meta {
+  name: Unauthenticated Access — Finance (negative)
+  type: http
+  seq: 11
+}
+
+get {
+  url: {{baseUrl}}/api/finance/accounts
+  body: none
+  auth: none
+}
+
+tests {
+  test("Status 401 without token", function() {
+    expect(res.getStatus()).to.equal(401);
+  });
+}

@@ -1,0 +1,242 @@
+name: CD — Staging Deployment
+
+# Triggered on every merge to main.
+# Builds images, deploys to staging K8s, runs smoke tests.
+# Automatic rollback if smoke tests fail.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'Docker image tag to deploy (defaults to commit SHA)'
+        required: false
+        type: string
+
+env:
+  NODE_VERSION: '20'
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ghcr.io/${{ github.repository_owner }}
+  K8S_NAMESPACE: 1platform-staging
+
+jobs:
+  # Build & push Docker images
+  build:
+    name: Build Images
+    runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ steps.meta.outputs.version }}
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Determine image tag
+        id: meta
+        run: |
+          TAG="${{ inputs.image_tag || github.sha }}"
+          echo "version=${TAG:0:12}" >> $GITHUB_OUTPUT
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & push API image
+        uses: docker/build-push-action@v5
+        with:
+          context: apps/api
+          push: true
+          tags: |
+            ${{ env.IMAGE_PREFIX }}/1platform-api:${{ steps.meta.outputs.version }}
+            ${{ env.IMAGE_PREFIX }}/1platform-api:staging
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            NODE_ENV=staging
+
+      - name: Build & push Web image
+        uses: docker/build-push-action@v5
+        with:
+          context: apps/web
+          push: true
+          tags: |
+            ${{ env.IMAGE_PREFIX }}/1platform-web:${{ steps.meta.outputs.version }}
+            ${{ env.IMAGE_PREFIX }}/1platform-web:staging
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            VITE_API_URL=https://staging.1platform.internal/api
+
+  # Deploy to staging K8s (kustomize overlay)
+  deploy-staging:
+    name: Deploy → Staging
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+      url: https://staging.1platform.internal
+    outputs:
+      previous_revision: ${{ steps.record-revision.outputs.revision }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install kubectl + kustomize
+        run: |
+          curl -sLO "https://dl.k8s.io/release/$(curl -sL https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          chmod +x kubectl && sudo mv kubectl /usr/local/bin/
+          curl -sL https://github.com/kubernetes-sigs/kustomize/releases/latest/download/kustomize_linux_amd64.tar.gz \
+            | tar xz -C /usr/local/bin
+
+      - name: Configure kubectl
+        run: |
+          echo "${{ secrets.STAGING_KUBECONFIG }}" | base64 -d > /tmp/kubeconfig
+          echo "KUBECONFIG=/tmp/kubeconfig" >> $GITHUB_ENV
+
+      - name: Record current deployment revision (for rollback)
+        id: record-revision
+        run: |
+          REV=$(kubectl rollout history deployment/1platform-api -n ${{ env.K8S_NAMESPACE }} \
+            --no-headers | tail -1 | awk '{print $1}')
+          echo "revision=${REV}" >> $GITHUB_OUTPUT
+
+      - name: Update image tags in overlay
+        run: |
+          cd k8s/overlays/staging
+          kustomize edit set image \
+            ghcr.io/1platform/1platform-api=${{ env.IMAGE_PREFIX }}/1platform-api:${{ needs.build.outputs.image_tag }} \
+            ghcr.io/1platform/1platform-web=${{ env.IMAGE_PREFIX }}/1platform-web:${{ needs.build.outputs.image_tag }}
+
+      - name: Apply manifests
+        run: |
+          kustomize build k8s/overlays/staging | kubectl apply -f -
+
+      - name: Wait for rollout
+        run: |
+          kubectl rollout status deployment/1platform-api -n ${{ env.K8S_NAMESPACE }} --timeout=120s
+          kubectl rollout status deployment/1platform-web -n ${{ env.K8S_NAMESPACE }} --timeout=120s
+
+  # Smoke tests against staging
+  smoke-tests:
+    name: Smoke Tests
+    needs: deploy-staging
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+
+      - name: Run smoke suite
+        run: npx playwright test tests/smoke/ --reporter=junit,list
+        env:
+          BASE_URL: https://staging.1platform.internal
+          API_URL: https://staging.1platform.internal/api
+        timeout-minutes: 5
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: smoke-results
+          path: test-results/
+
+  # 4. Lighthouse audit against staging
+  # Runs after smoke passes. Warns on score regressions but does
+  # not block the deployment — use results to track trends.
+  lighthouse:
+    name: Lighthouse Audit
+    needs: smoke-tests
+    if: needs.smoke-tests.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - name: Run Lighthouse against staging
+        run: |
+          npx lhci autorun \
+            --collect.url=https://staging.1platform.internal/ \
+            --collect.url=https://staging.1platform.internal/finance \
+            --collect.url=https://staging.1platform.internal/health \
+            --collect.url=https://staging.1platform.internal/commerce \
+            --collect.numberOfRuns=2 \
+            --collect.settings.preset=desktop \
+            --upload.target=filesystem \
+            --upload.outputDir=results/lighthouse
+        continue-on-error: true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lighthouse-staging
+          path: results/lighthouse/
+
+  # Auto-rollback if smoke tests failed
+  rollback:
+    name: Rollback (on smoke failure)
+    needs: [deploy-staging, smoke-tests]
+    if: failure() && needs.smoke-tests.result == 'failure'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure kubectl
+        run: |
+          echo "${{ secrets.STAGING_KUBECONFIG }}" | base64 -d > /tmp/kubeconfig
+          echo "KUBECONFIG=/tmp/kubeconfig" >> $GITHUB_ENV
+
+      - name: Rollback API deployment
+        run: |
+          kubectl rollout undo deployment/1platform-api -n ${{ env.K8S_NAMESPACE }} \
+            --to-revision=${{ needs.deploy-staging.outputs.previous_revision }}
+          kubectl rollout status deployment/1platform-api -n ${{ env.K8S_NAMESPACE }} --timeout=60s
+
+      - name: Rollback Web deployment
+        run: |
+          kubectl rollout undo deployment/1platform-web -n ${{ env.K8S_NAMESPACE }}
+          kubectl rollout status deployment/1platform-web -n ${{ env.K8S_NAMESPACE }} --timeout=60s
+
+      - name: Notify on rollback
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue?.number ?? 0,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## Staging Rollback Triggered\n\nSmoke tests failed for commit \`${{ github.sha }}\`.\nStagging has been rolled back to revision \`${{ needs.deploy-staging.outputs.previous_revision }}\`.\n\nInvestigate before re-deploying.`,
+            }).catch(() => {}); // ignore if no PR context
+
+  deployment-summary:
+    name: Deployment Summary
+    needs: [build, deploy-staging, smoke-tests, lighthouse]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Write summary
+        run: |
+          STATUS="${{ needs.smoke-tests.result }}"
+          ICON=$([[ "$STATUS" == "success" ]] && echo "✅" || echo "❌")
+          cat >> $GITHUB_STEP_SUMMARY <<EOF
+          ## ${ICON} Staging Deployment — ${{ github.sha }}
+
+          | Step | Result |
+          |------|--------|
+          | Build | ${{ needs.build.result }} |
+          | Deploy | ${{ needs.deploy-staging.result }} |
+          | Smoke Tests | ${{ needs.smoke-tests.result }} |
+          | Lighthouse | ${{ needs.lighthouse.result }} |
+
+          **Image tag:** \`${{ needs.build.outputs.image_tag }}\`
+          **Environment:** [staging.1platform.internal](https://staging.1platform.internal)
+          EOF

@@ -1,0 +1,42 @@
+meta {
+  name: List Accounts
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/finance/accounts
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{aliceToken}}
+}
+
+tests {
+  test("Status 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Returns accounts array", function() {
+    const body = res.getBody();
+    expect(body.accounts).to.be.an("array");
+    expect(body.accounts.length).to.be.greaterThan(0);
+  });
+
+  test("Stores first account ID", function() {
+    const accounts = res.getBody().accounts;
+    if (accounts.length > 0) {
+      bru.setEnvVar("accountId", accounts[0].id);
+    }
+  });
+
+  test("Account has required fields", function() {
+    const account = res.getBody().accounts[0];
+    expect(account.id).to.be.a("string");
+    expect(account.accountNumber).to.be.a("string");
+    expect(account.balance).to.be.a("number");
+    expect(account.currency).to.equal("USD");
+  });
+}

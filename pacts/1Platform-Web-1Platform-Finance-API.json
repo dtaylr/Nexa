@@ -1,0 +1,311 @@
+{
+  "consumer": {
+    "name": "1Platform-Web"
+  },
+  "interactions": [
+    {
+      "description": "a transfer request exceeding available balance",
+      "providerStates": [
+        {
+          "name": "account acc-001 has a balance of $5.00"
+        }
+      ],
+      "request": {
+        "body": {
+          "amount": 100,
+          "currency": "USD",
+          "fromAccountId": "acc-001",
+          "toAccountId": "acc-002"
+        },
+        "headers": {
+          "Authorization": "Bearer token",
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "body": {
+            "$.amount": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.currency": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.fromAccountId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.toAccountId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Authorization": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "/api/BrightBank/transfers"
+      },
+      "response": {
+        "body": {
+          "availableBalance": 5,
+          "error": "INSUFFICIENT_FUNDS",
+          "requestedAmount": 100
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "body": {
+            "$.availableBalance": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.requestedAmount": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          },
+          "status": {}
+        },
+        "status": 422
+      }
+    },
+    {
+      "description": "a valid transfer request",
+      "providerStates": [
+        {
+          "name": "accounts acc-001 and acc-002 exist with sufficient balance"
+        }
+      ],
+      "request": {
+        "body": {
+          "amount": 50,
+          "currency": "USD",
+          "fromAccountId": "acc-001",
+          "reference": "Test transfer",
+          "toAccountId": "acc-002"
+        },
+        "headers": {
+          "Authorization": "Bearer eyJhbGciOiJIUzI1NiJ9",
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "body": {
+            "$.amount": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.currency": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.fromAccountId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.reference": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.toAccountId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Authorization": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "/api/BrightBank/transfers"
+      },
+      "response": {
+        "body": {
+          "amount": 50,
+          "auditId": "b5c4d3e2-f1a0-1234-bcde-fa0987654321",
+          "currency": "USD",
+          "status": "PENDING",
+          "timestamp": "2024-01-01T00:00:00.000Z",
+          "transferId": "a4b3c2d1-e5f6-7890-abcd-ef1234567890"
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "status": 201
+      }
+    },
+    {
+      "description": "a request for all user accounts",
+      "providerStates": [
+        {
+          "name": "user has two accounts"
+        }
+      ],
+      "request": {
+        "headers": {
+          "Authorization": "Bearer token"
+        },
+        "matchingRules": {
+          "header": {
+            "Authorization": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          }
+        },
+        "method": "GET",
+        "path": "/api/BrightBank/accounts"
+      },
+      "response": {
+        "body": {
+          "accounts": [
+            {
+              "accountNumber": "60161331001234",
+              "balance": 100,
+              "currency": "USD",
+              "id": "acc-001",
+              "type": "current"
+            }
+          ]
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "body": {
+            "$.accounts": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type",
+                  "min": 1
+                }
+              ]
+            },
+            "$.accounts[*].accountNumber": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.accounts[*].balance": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.accounts[*].currency": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.accounts[*].id": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.accounts[*].type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          },
+          "status": {}
+        },
+        "status": 200
+      }
+    }
+  ],
+  "metadata": {
+    "pact-js": {
+      "version": "12.5.2"
+    },
+    "pactRust": {
+      "ffi": "0.4.20",
+      "models": "1.2.0"
+    },
+    "pactSpecification": {
+      "version": "3.0.0"
+    }
+  },
+  "provider": {
+    "name": "1Platform-Finance-API"
+  }
+}

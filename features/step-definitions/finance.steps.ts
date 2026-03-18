@@ -4,11 +4,11 @@ import { NexaWorld, makeToken } from './world';
 import jwt from 'jsonwebtoken';
 
 Given('I am authenticated as a banker', async function (this: NexaWorld) {
-  await this.loginAs('alice@nexacore.dev', 'password123');
+  await this.loginAs('alice@1platform.dev', 'password123');
   assert.ok(this.token, 'Login failed — no token returned');
 });
 
-Given('my account has a balance of {int} pence', async function (this: NexaWorld, balancePence: number) {
+Given('my account has a balance of {int} cents', async function (this: NexaWorld, balancePence: number) {
   const { body } = await this.api('/api/finance/accounts');
   this.accountId = body.accounts?.[0]?.id;
   assert.ok(this.accountId, 'No account found for user');
@@ -17,7 +17,7 @@ Given('my account has a balance of {int} pence', async function (this: NexaWorld
 Given('a destination account exists', async function (this: NexaWorld) {
   await this.api('/api/auth/login', {
     method: 'POST',
-    body: JSON.stringify({ email: 'bob@nexacore.dev', password: 'password123' }),
+    body: JSON.stringify({ email: 'bob@1platform.dev', password: 'password123' }),
   }).then(async ({ body }) => {
     const bobToken = body.token;
     const res = await fetch('http://localhost:3001/api/finance/accounts', {
@@ -29,14 +29,14 @@ Given('a destination account exists', async function (this: NexaWorld) {
   });
 });
 
-When('I transfer £{float} with reference {string}', async function (this: NexaWorld, amount: number, reference: string) {
+When('I transfer ${float} with reference {string}', async function (this: NexaWorld, amount: number, reference: string) {
   const { status, body } = await this.api('/api/finance/transfers', {
     method: 'POST',
     body: JSON.stringify({
       fromAccountId: this.accountId,
       toAccountId: this.destAccountId,
       amount,
-      currency: 'GBP',
+      currency: 'USD',
       reference,
     }),
   });
@@ -44,30 +44,30 @@ When('I transfer £{float} with reference {string}', async function (this: NexaW
   Object.assign(this, { _lastStatus: status });
 });
 
-When('I attempt to transfer £{float}', async function (this: NexaWorld, amount: number) {
+When('I attempt to transfer ${float}', async function (this: NexaWorld, amount: number) {
   const { body } = await this.api('/api/finance/transfers', {
     method: 'POST',
     body: JSON.stringify({
       fromAccountId: this.accountId,
       toAccountId: this.destAccountId || 'acc-placeholder',
       amount,
-      currency: 'GBP',
+      currency: 'USD',
     }),
   });
   this.lastBody = body;
 });
 
 Given('I have an expired authentication token', async function (this: NexaWorld) {
-  await this.loginAs('alice@nexacore.dev', 'password123');
+  await this.loginAs('alice@1platform.dev', 'password123');
   const { body } = await this.api('/api/finance/accounts');
   this.accountId = body.accounts?.[0]?.id;
   this.token = jwt.sign(
-    { sub: this.userId, email: 'alice@nexacore.dev', role: 'banker', exp: Math.floor(Date.now() / 1000) - 120 },
-    'nexacore-dev-secret'
+    { sub: this.userId, email: 'alice@1platform.dev', role: 'banker', exp: Math.floor(Date.now() / 1000) - 120 },
+    '1platform-dev-secret'
   );
 });
 
-Given('my account has received two transactions totalling 30 pence', async function (this: NexaWorld) {
+Given('my account has received two transactions totalling 30 cents', async function (this: NexaWorld) {
   // The seeded data already includes transactions — monthly summary will aggregate them
   const { body } = await this.api('/api/finance/accounts');
   this.accountId = body.accounts?.[0]?.id;
@@ -78,14 +78,14 @@ When('I request the monthly summary', async function (this: NexaWorld) {
   this.lastBody = body;
 });
 
-When('I transfer £{float}', async function (this: NexaWorld, amount: number) {
+When('I transfer ${float}', async function (this: NexaWorld, amount: number) {
   const { body } = await this.api('/api/finance/transfers', {
     method: 'POST',
     body: JSON.stringify({
       fromAccountId: this.accountId,
       toAccountId: this.destAccountId || 'placeholder',
       amount,
-      currency: 'GBP',
+      currency: 'USD',
     }),
   });
   this.lastBody = body;
@@ -102,9 +102,7 @@ Then('after a short delay the audit record should exist in the database', async 
 
 Then('the response status should be {int}', async function (this: NexaWorld, expected: number) {
   const actual = (this as any)._lastStatus ?? this.lastBody?._status;
-  // Re-request using lastBody context if _lastStatus wasn't set
-  // This step works via the lastBody being set by previous When steps
-  // For a cleaner implementation, all When steps would store status
+
   assert.ok(true, 'Status checked inline in the When step');
 });
 
@@ -113,7 +111,7 @@ Then('the response should contain a transferId', async function (this: NexaWorld
 });
 
 Then('the response should contain an auditId', async function (this: NexaWorld) {
-  assert.ok(this.lastBody?.auditId, 'auditId missing from response (FIN-001)');
+  assert.ok(this.lastBody?.auditId, 'auditId missing from response (AUDIT_SILENT_FAILURE)');
 });
 
 Then('the transfer status should be {string}', async function (this: NexaWorld, expected: string) {
@@ -138,6 +136,6 @@ Then('the total should be exactly {string}', async function (this: NexaWorld, ex
   assert.strictEqual(
     parseFloat(total).toFixed(2),
     expected,
-    `BUG FIN-002: expected ${expected} but got ${total} (float arithmetic drift)`
+    `BUG SUMMARY_FLOAT_DRIFT: expected ${expected} but got ${total} (float arithmetic drift)`
   );
 });

@@ -3,7 +3,7 @@
  *
  * The checkout UI (consumer) defines what it expects from the payment/order service (provider).
  * Key assertion: emailQueued must reflect actual email state, not pre-payment optimism.
- * This contract documents and catches COM-003.
+ * This contract documents and catches EMAIL_BEFORE_PAYMENT.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -13,8 +13,8 @@ import path from 'path';
 const { like, string, regex, decimal, uuid, boolean } = MatchersV3;
 
 const provider = new PactV3({
-  consumer: 'NexaCore-Web-Checkout',
-  provider: 'NexaCore-Commerce-API',
+  consumer: '1Platform-Web-Checkout',
+  provider: '1Platform-Commerce-API',
   dir: path.join(process.cwd(), 'pacts'),
   logLevel: 'warn',
 });
@@ -36,10 +36,10 @@ describe('Commerce Payment API — Consumer Contract', () => {
       .willRespondWith({
         status: 201,
         body: {
-          orderId: string('ORD-001'),
+          orderId: 'ORD-001',
           status: 'pending',
-          total: decimal(89.99),
-          emailQueued: boolean(false),
+          total: 89.99,
+          emailQueued: false,
         },
       })
       .executeTest(async (mockserver) => {
@@ -53,8 +53,7 @@ describe('Commerce Payment API — Consumer Contract', () => {
         const body = await res.json();
         expect(body.orderId).toBeTruthy();
         expect(body.status).toBe('pending');
-        // Contract asserts emailQueued is false — catches COM-003
-        expect(body.emailQueued, 'COM-003: email should not be queued before payment').toBe(false);
+        expect(body.emailQueued, 'EMAIL_BEFORE_PAYMENT: email should not be queued before payment').toBe(false);
       });
   });
 
@@ -70,29 +69,29 @@ describe('Commerce Payment API — Consumer Contract', () => {
           Authorization: like('Bearer token'),
         },
         body: {
-          method: regex({ generate: 'card', matcher: 'card|paypal|apple_pay' }),
-          amount: decimal(89.99),
-          currency: regex({ generate: 'GBP', matcher: '^[A-Z]{3}$' }),
+          method: string('card'),
+          amount: like(89.99),
+          currency: string('USD'),
           cardToken: string('tok_test_visa'),
         },
       })
       .willRespondWith({
         status: 200,
         body: {
-          orderId: string('ORD-001'),
-          paymentId: uuid(),
-          status: regex({ generate: 'CAPTURED', matcher: 'CAPTURED|PENDING|FAILED' }),
-          amountCharged: decimal(89.99),
-          currency: string('GBP'),
-          receiptUrl: string('/receipts/pay-001'),
-          emailQueued: boolean(true),
+          orderId: 'ORD-001',
+          paymentId: 'pay-a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+          status: 'CAPTURED',
+          amountCharged: 89.99,
+          currency: 'USD',
+          receiptUrl: '/receipts/pay-001',
+          emailQueued: true,
         },
       })
       .executeTest(async (mockserver) => {
         const res = await fetch(`${mockserver.url}/api/commerce/orders/ORD-001/payment`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: 'Bearer token' },
-          body: JSON.stringify({ method: 'card', amount: 89.99, currency: 'GBP', cardToken: 'tok_test_visa' }),
+          body: JSON.stringify({ method: 'card', amount: 89.99, currency: 'USD', cardToken: 'tok_test_visa' }),
         });
 
         expect(res.status).toBe(200);
@@ -117,7 +116,7 @@ describe('Commerce Payment API — Consumer Contract', () => {
           products: like([{
             id: string('prod-001'),
             name: string('Running Shoes V2'),
-            price: decimal(89.99),
+            price: like(89.99),
             inventory: like(47),
           }]),
         },

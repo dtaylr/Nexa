@@ -1,0 +1,25 @@
+meta {
+  name: List Cards
+  type: http
+  seq: 9
+}
+
+get {
+  url: {{baseUrl}}/api/finance/cards
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{aliceToken}}
+}
+
+tests {
+  test("Status 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Returns cards array", function() {
+    expect(res.getBody().cards).to.be.an("array");
+  });
+}

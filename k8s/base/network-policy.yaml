@@ -1,0 +1,81 @@
+---
+# API can only receive traffic from the web tier and the ingress controller
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-web-to-api
+  namespace: 1platform
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: 1platform-api
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: 1platform-web
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 3001
+  egress:
+    # Allow DNS resolution
+    - ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+
+---
+# Web tier can only receive traffic from the ingress controller
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ingress-to-web
+  namespace: 1platform
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: 1platform-web
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 8080
+  egress:
+    # Web pods need to reach the API
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: 1platform-api
+      ports:
+        - protocol: TCP
+          port: 3001
+    # DNS
+    - ports:
+        - protocol: UDP
+          port: 53
+
+---
+# Default-deny all other traffic in the namespace
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: 1platform
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress

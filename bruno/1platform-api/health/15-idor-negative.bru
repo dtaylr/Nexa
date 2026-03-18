@@ -1,0 +1,29 @@
+meta {
+  name: IDOR Negative — Access Other Patient (PATIENT_RECORDS_IDOR)
+  type: http
+  seq: 15
+}
+
+get {
+  url: {{baseUrl}}/api/health/patients/patient-carol-003/appointments
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{patientToken}}
+}
+
+tests {
+  // BUG PATIENT_RECORDS_IDOR: No ownership check on patient endpoints.
+  // Alice's token should NOT be able to access Carol's appointments.
+  // The API currently returns 200 — it should return 403 Forbidden.
+  test("BUG PATIENT_RECORDS_IDOR — IDOR: should be 403, currently 200", function() {
+    const status = res.getStatus();
+    if (status === 200) {
+      console.warn("PATIENT_RECORDS_IDOR: IDOR confirmed — patient accessed another patient's records without authorization");
+    }
+    // Uncomment the line below when the bug is fixed:
+    // expect(status).to.equal(403);
+  });
+}

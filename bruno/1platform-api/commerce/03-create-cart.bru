@@ -1,0 +1,33 @@
+meta {
+  name: Create Cart
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/api/commerce/cart
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{shopperToken}}
+}
+
+tests {
+  test("Status 201", function() {
+    expect(res.getStatus()).to.equal(201);
+  });
+
+  test("Returns cart ID", function() {
+    expect(res.getBody().cartId).to.be.a("string");
+  });
+
+  test("Store cartId for downstream requests", function() {
+    const cartId = res.getBody().cartId;
+    if (cartId) {
+      bru.setEnvVar("cartId", cartId);
+      console.log("cartId set:", cartId);
+    }
+  });
+}

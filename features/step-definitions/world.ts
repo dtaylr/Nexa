@@ -5,7 +5,7 @@ import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
 
 const BASE = process.env.API_URL || 'http://localhost:3001';
-const JWT_SECRET = 'nexacore-dev-secret';
+const JWT_SECRET = '1platform-dev-secret';
 
 export function makeToken(userId: number, email: string, role: string, expiresIn = 3600): string {
   return jwt.sign({ sub: userId, email, role }, JWT_SECRET, { expiresIn });

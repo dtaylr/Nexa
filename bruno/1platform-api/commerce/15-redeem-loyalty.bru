@@ -1,0 +1,34 @@
+meta {
+  name: Redeem Loyalty Points
+  type: http
+  seq: 15
+}
+
+post {
+  url: {{baseUrl}}/api/commerce/loyalty/redeem
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{shopperToken}}
+}
+
+body:json {
+  {
+    "points": 100,
+    "orderId": "{{orderId}}"
+  }
+}
+
+tests {
+  test("Status 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Returns updated points balance", function() {
+    const body = res.getBody();
+    expect(body).to.have.property("pointsRedeemed");
+    expect(body).to.have.property("remainingPoints");
+  });
+}

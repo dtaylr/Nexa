@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useToast } from '../components/Toast';
 
 type Step = 'details' | 'payment' | 'done';
 
 const fieldStyle: React.CSSProperties = { marginBottom: '1rem' };
 const labelStyle: React.CSSProperties = { display: 'block', fontWeight: 500, marginBottom: '0.3rem', fontSize: '0.9rem' };
-// BUG COM-005: no max-width constraint on inputs — causes horizontal scroll on 375px viewport
+// BUG CHECKOUT_MOBILE_OVERFLOW: no max-width constraint on inputs — causes horizontal scroll on 375px viewport
 const inputStyle: React.CSSProperties = { width: '100%', padding: '0.6rem', border: '1px solid #ddd', borderRadius: 6, fontSize: '1rem', boxSizing: 'border-box' };
 
 interface CartItem { productId: string; name: string; price: number; quantity: number; }
@@ -15,6 +16,7 @@ function requiredLabel(text: string) {
 }
 
 export default function Checkout() {
+  const { show } = useToast();
   const [step, setStep] = useState<Step>('details');
   const [form, setForm] = useState({
     email: '', firstName: '', lastName: '', address: '', postcode: '',
@@ -31,12 +33,12 @@ export default function Checkout() {
   const update = (k: string, v: string) => { setForm(f => ({ ...f, [k]: v })); setFieldError(''); };
 
   function toPayment() {
-    if (!form.firstName.trim()) { setFieldError('First name is required'); return; }
-    if (!form.lastName.trim()) { setFieldError('Last name is required'); return; }
-    if (!form.email.trim()) { setFieldError('Email is required'); return; }
-    if (!/\S+@\S+\.\S+/.test(form.email)) { setFieldError('Please enter a valid email address'); return; }
-    if (!form.address.trim()) { setFieldError('Delivery address is required'); return; }
-    if (!form.postcode.trim()) { setFieldError('Postcode is required'); return; }
+    if (!form.firstName.trim()) { setFieldError('First name is required'); show('First name is required', 'error'); return; }
+    if (!form.lastName.trim()) { setFieldError('Last name is required'); show('Last name is required', 'error'); return; }
+    if (!form.email.trim()) { setFieldError('Email is required'); show('Email is required', 'error'); return; }
+    if (!/\S+@\S+\.\S+/.test(form.email)) { setFieldError('Please enter a valid email address'); show('Please enter a valid email address', 'error'); return; }
+    if (!form.address.trim()) { setFieldError('Address line 1 is required'); show('Address line 1 is required', 'error'); return; }
+    if (!form.postcode.trim()) { setFieldError('Postcode is required'); show('Postcode is required', 'error'); return; }
     if (cartItems.length === 0) { setFieldError('Your basket is empty'); return; }
     setFieldError('');
     setStep('payment');
@@ -58,7 +60,7 @@ export default function Checkout() {
       const loginRes = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: 'shopper@nexacore.dev', password: 'password123' }),
+        body: JSON.stringify({ email: 'shopper@1platform.dev', password: 'password123' }),
       });
       if (!loginRes.ok) throw new Error('Authentication failed. Please try again.');
       const { token } = await loginRes.json();
@@ -98,7 +100,7 @@ export default function Checkout() {
       const payRes = await fetch(`/api/commerce/orders/${order.orderId}/payment`, {
         method: 'POST',
         headers,
-        body: JSON.stringify({ method: 'card', amount: order.total, currency: 'GBP', cardToken: 'tok_demo' }),
+        body: JSON.stringify({ method: 'card', amount: order.total, currency: 'USD', cardToken: 'tok_demo' }),
       });
       if (!payRes.ok) throw new Error('Payment could not be processed. Please check your card details.');
 
@@ -129,15 +131,15 @@ export default function Checkout() {
             {confirmedOrder.items.map((i: any) => (
               <div key={i.productId} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', margin: '0.25rem 0' }}>
                 <span>{i.name} × {i.quantity}</span>
-                <span>£{(i.price * i.quantity).toFixed(2)}</span>
+                <span>${(i.price * i.quantity).toFixed(2)}</span>
               </div>
             ))}
             <div style={{ borderTop: '1px solid #e0e0e0', paddingTop: '0.5rem', marginTop: '0.5rem', display: 'flex', justifyContent: 'space-between', fontWeight: 700 }}>
               <span>Total</span>
-              <span>£{confirmedOrder.total.toFixed(2)}</span>
+              <span>${confirmedOrder.total.toFixed(2)}</span>
             </div>
           </div>
-          <Link to="/products">
+          <Link to="/BuyItAll/products">
             <button style={{ marginTop: '1rem', background: '#e65100', color: '#fff', border: 'none', padding: '0.75rem 2rem', borderRadius: 8, cursor: 'pointer' }}>
               Continue shopping
             </button>
@@ -157,12 +159,12 @@ export default function Checkout() {
           {cartItems.map(i => (
             <div key={i.productId} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: '#555', marginBottom: '0.25rem' }}>
               <span>{i.name} × {i.quantity}</span>
-              <span>£{(i.price * i.quantity).toFixed(2)}</span>
+              <span>${(i.price * i.quantity).toFixed(2)}</span>
             </div>
           ))}
           <div style={{ borderTop: '1px solid #e0e0e0', paddingTop: '0.5rem', marginTop: '0.5rem', display: 'flex', justifyContent: 'space-between', fontWeight: 700 }}>
             <span>Total</span>
-            <span>£{total.toFixed(2)}</span>
+            <span>${total.toFixed(2)}</span>
           </div>
         </div>
 
@@ -217,12 +219,12 @@ export default function Checkout() {
           {cartItems.map(i => (
             <div key={i.productId} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: '#555', marginBottom: '0.25rem' }}>
               <span>{i.name} × {i.quantity}</span>
-              <span>£{(i.price * i.quantity).toFixed(2)}</span>
+              <span>${(i.price * i.quantity).toFixed(2)}</span>
             </div>
           ))}
           <div style={{ borderTop: '1px solid #e0e0e0', paddingTop: '0.5rem', marginTop: '0.5rem', display: 'flex', justifyContent: 'space-between', fontWeight: 700, fontSize: '0.95rem' }}>
             <span>Total</span>
-            <span>£{total.toFixed(2)}</span>
+            <span>${total.toFixed(2)}</span>
           </div>
         </div>
       )}
@@ -232,7 +234,7 @@ export default function Checkout() {
 
         <div style={fieldStyle}>
           <label style={labelStyle} htmlFor="email">{requiredLabel('Email')}</label>
-          {/* BUG COM-005: no max-width constraint on inputs — causes horizontal scroll on 375px viewport */}
+          {/* BUG CHECKOUT_MOBILE_OVERFLOW: no max-width constraint on inputs — causes horizontal scroll on 375px viewport */}
           <input id="email" style={inputStyle} type="email" placeholder="you@example.com" value={form.email} onChange={e => update('email', e.target.value)} />
         </div>
 
@@ -248,8 +250,8 @@ export default function Checkout() {
         </div>
 
         <div style={fieldStyle}>
-          <label style={labelStyle} htmlFor="address">{requiredLabel('Delivery address')}</label>
-          <input id="address" style={inputStyle} placeholder="1 Example Street, London" value={form.address} onChange={e => update('address', e.target.value)} />
+          <label style={labelStyle} htmlFor="address">{requiredLabel('Address line 1')}</label>
+          <input id="address" style={inputStyle} placeholder="123 Example Street" value={form.address} onChange={e => update('address', e.target.value)} />
         </div>
 
         <div style={fieldStyle}>

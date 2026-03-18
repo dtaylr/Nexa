@@ -49,7 +49,7 @@ export function setup() {
   if (!TOKEN) {
     const loginRes = http.post(
       `${BASE}/api/auth/login`,
-      JSON.stringify({ email: 'alice@nexacore.dev', password: 'password123' }),
+      JSON.stringify({ email: 'alice@1platform.dev', password: 'password123' }),
       { headers: { 'Content-Type': 'application/json' } }
     );
     if (loginRes.status !== 200) {
@@ -59,7 +59,7 @@ export function setup() {
     const body = JSON.parse(loginRes.body);
     const token = body.token;
 
-    const accountsRes = http.get(`${BASE}/api/finance/accounts`, {
+    const accountsRes = http.get(`${BASE}/api/BrightBank/accounts`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     const accounts = JSON.parse(accountsRes.body).accounts || [];
@@ -87,11 +87,11 @@ export default function (data) {
       fromAccountId: fromAccount,
       toAccountId: toAccount,
       amount: 0.01,
-      currency: 'GBP',
+      currency: 'USD',
       reference: `Load test ${Date.now()}`,
     });
 
-    const res = http.post(`${BASE}/api/finance/transfers`, payload, { headers: auth, tags: { endpoint: 'transfer' } });
+    const res = http.post(`${BASE}/api/BrightBank/transfers`, payload, { headers: auth, tags: { endpoint: 'transfer' } });
     transferDuration.add(res.timings.duration);
 
     const ok = check(res, {
@@ -101,10 +101,10 @@ export default function (data) {
     if (res.status === 201) {
       const body = JSON.parse(res.body);
 
-      // FIN-001: audit ID must be present
+      // AUDIT_SILENT_FAILURE: audit ID must be present
       auditPresent.add(body.auditId !== undefined && body.auditId !== null);
 
-      // FIN-005: no account numbers in success response
+      // ACCOUNT_ID_DISCLOSURE: no account numbers in success response
       const rawBody = res.body;
       accountLeakage.add(!/\d{8,}/.test(rawBody));
     } else if (res.status !== 422) {
@@ -113,7 +113,7 @@ export default function (data) {
   });
 
   group('account_read', () => {
-    const res = http.get(`${BASE}/api/finance/accounts`, { headers: auth });
+    const res = http.get(`${BASE}/api/BrightBank/accounts`, { headers: auth });
     check(res, { 'accounts returned': r => r.status === 200 });
   });
 

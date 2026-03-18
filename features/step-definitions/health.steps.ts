@@ -3,7 +3,7 @@ import assert from 'assert';
 import { NexaWorld } from './world';
 
 Given('I am authenticated as a patient', async function (this: NexaWorld) {
-  await this.loginAs('patient.one@nexacore.dev', 'password123');
+  await this.loginAs('patient.one@1platform.dev', 'password123');
   assert.ok(this.token, 'Patient login failed');
 });
 
@@ -64,7 +64,7 @@ Then('the dosage value should be of type number', async function (this: NexaWorl
   assert.strictEqual(
     typeof med.dosage.value,
     'number',
-    `BUG HLT-001: dosage.value is ${typeof med.dosage.value} ("${med.dosage.value}") — expected number`
+    `BUG DOSAGE_TYPE_MISMATCH: dosage.value is ${typeof med.dosage.value} ("${med.dosage.value}") — expected number`
   );
 });
 
@@ -84,7 +84,7 @@ When('I request a patient record with an invalid ID {string}', async function (t
 
 Then('the response body should not contain the invalid ID', async function (this: NexaWorld) {
   const body = JSON.stringify(this.lastBody);
-  assert.ok(!body.includes('INVALID'), `BUG HLT-002: invalid ID echoed in error response: ${body}`);
+  assert.ok(!body.includes('INVALID'), `BUG PATIENT_PII_DISCLOSURE: invalid ID echoed in error response: ${body}`);
 });
 
 Then('the response body should not match any PII patterns', async function (this: NexaWorld) {
@@ -109,7 +109,7 @@ When('two booking requests are submitted simultaneously for the same slot', asyn
 
 Then('only one booking should succeed', async function (this: NexaWorld) {
   const succeeded = this.lastBody.statuses.filter((s: number) => s === 201);
-  assert.strictEqual(succeeded.length, 1, `BUG HLT-003: ${succeeded.length} bookings succeeded — expected exactly 1`);
+  assert.strictEqual(succeeded.length, 1, `BUG APPOINTMENT_DOUBLE_BOOKING: ${succeeded.length} bookings succeeded — expected exactly 1`);
 });
 
 Then('the other should be rejected', async function (this: NexaWorld) {

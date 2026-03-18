@@ -3,7 +3,7 @@ import assert from 'assert';
 import { NexaWorld } from './world';
 
 Given('I am authenticated as a shopper', async function (this: NexaWorld) {
-  await this.loginAs('shopper@nexacore.dev', 'password123');
+  await this.loginAs('shopper@1platform.dev', 'password123');
   assert.ok(this.token, 'Shopper login failed');
 });
 
@@ -71,7 +71,7 @@ Then('emailQueued should be false before payment is taken', async function (this
   assert.strictEqual(
     this.lastBody?.emailQueued,
     false,
-    `BUG COM-003: emailQueued is ${this.lastBody?.emailQueued} before payment — should be false`
+    `BUG EMAIL_BEFORE_PAYMENT: emailQueued is ${this.lastBody?.emailQueued} before payment — should be false`
   );
 });
 
@@ -95,7 +95,7 @@ Given('I have a pending order', async function (this: NexaWorld) {
 When('I submit payment with method {string} for the order total', async function (this: NexaWorld, method: string) {
   const { body } = await this.api(`/api/commerce/orders/${this.orderId}/payment`, {
     method: 'POST',
-    body: JSON.stringify({ method, amount: 10.00, currency: 'GBP', cardToken: 'tok_test_visa' }),
+    body: JSON.stringify({ method, amount: 10.00, currency: 'USD', cardToken: 'tok_test_visa' }),
   });
   this.lastBody = body;
 });
@@ -119,7 +119,7 @@ Then('every product price should have at most {int} decimal places', async funct
     const decimals = str.includes('.') ? str.split('.')[1].length : 0;
     assert.ok(
       decimals <= places,
-      `BUG COM-006: product "${p.name}" has price ${p.price} — ${decimals} decimal places`
+      `BUG PRICE_FLOAT_PRECISION: product "${p.name}" has price ${p.price} — ${decimals} decimal places`
     );
   }
 });
@@ -147,7 +147,7 @@ Given('two shoppers attempt to buy that product simultaneously', async function 
 
 Then('exactly one order should succeed', async function (this: NexaWorld) {
   const succeeded = this.lastBody.statuses.filter((s: number) => s === 201);
-  assert.strictEqual(succeeded.length, 1, `BUG COM-002: ${succeeded.length} orders succeeded — expected exactly 1`);
+  assert.strictEqual(succeeded.length, 1, `BUG INVENTORY_OVERSELL_RACE: ${succeeded.length} orders succeeded — expected exactly 1`);
 });
 
 Then('the other should return status {int}', async function (this: NexaWorld, expected: number) {
@@ -157,5 +157,5 @@ Then('the other should return status {int}', async function (this: NexaWorld, ex
 
 Then('the final inventory should be {int}', async function (this: NexaWorld, expected: number) {
   const { body } = await this.api(`/api/commerce/products/${this.productId}`);
-  assert.strictEqual(body.inventory, expected, `BUG COM-002: inventory is ${body.inventory}, expected ${expected}`);
+  assert.strictEqual(body.inventory, expected, `BUG INVENTORY_OVERSELL_RACE: inventory is ${body.inventory}, expected ${expected}`);
 });

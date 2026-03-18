@@ -1,0 +1,56 @@
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: 1platform-api
+  namespace: 1platform
+  labels:
+    app.kubernetes.io/name: 1platform-api
+    app.kubernetes.io/part-of: 1platform
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: 1platform-api
+
+  minReplicas: 2
+  maxReplicas: 8
+
+  metrics:
+    # Scale out when average CPU > 70%
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+
+    # Scale out when average memory > 80%
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+
+  behavior:
+    scaleUp:
+      # Aggressive scale-up: allow doubling replicas in one step, every 30s
+      stabilizationWindowSeconds: 30
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 30
+        - type: Pods
+          value: 2
+          periodSeconds: 30
+      selectPolicy: Max
+
+    scaleDown:
+      # Conservative scale-down: wait 5 min before removing pods
+      # Prevents thrashing during brief load spikes
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Percent
+          value: 25
+          periodSeconds: 60
+      selectPolicy: Min
