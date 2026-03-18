@@ -280,13 +280,11 @@ jobs:
           cache: npm
       - run: npm ci
       # Lighthouse audits a production build via staticDistDir — no dev server needed.
-      # Install Playwright Chromium so lhci-run.js can use it on Linux.
       - run: npx playwright install --with-deps chromium
       - name: Run Lighthouse CI
         run: npm run test:lighthouse
         env:
-          # Set LHCI_GITHUB_APP_TOKEN in repo Settings → Secrets to enable
-          # Lighthouse scores as PR status checks. Safe to omit — just skips posting.
+          # Lighthouse scores as PR status checks. Wont post if omitted.
           LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
       - uses: actions/upload-artifact@v4
         if: always()
@@ -297,9 +295,9 @@ jobs:
   # Load Tests — k6 (nightly + manual only, not on PRs)
   load-tests:
     name: Load — ${{ matrix.domain }}
-    needs: [e2e-desktop, e2e-mobile, bdd-tests]
+    needs: [api-tests]
     runs-on: ubuntu-latest
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    if: always() && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
     strategy:
       matrix:
         domain: [finance, commerce]
@@ -323,6 +321,7 @@ jobs:
       - run: npm run test:load:${{ matrix.domain }}
         continue-on-error: true
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: k6-results-${{ matrix.domain }}
           path: artifacts/k6-${{ matrix.domain }}-summary.json
@@ -341,7 +340,6 @@ jobs:
           cache: npm
       - run: npm ci
 
-      # Collect all test artifacts
       - uses: actions/download-artifact@v4
         with:
           pattern: api-results-*

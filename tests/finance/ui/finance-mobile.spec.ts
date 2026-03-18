@@ -16,9 +16,12 @@ async function loginFinance(page: any): Promise<string | null> {
   });
   if (!res.ok()) return null;
   const { token } = await res.json();
+  // addInitScript injects the token before React mounts on every subsequent page load —
+  // more reliable than page.evaluate + reload, especially in WebKit (tablet/Safari)
+  await page.addInitScript((t: string) => {
+    window.localStorage.setItem('fin_token', t);
+  }, token);
   await page.goto('/BrightBank/dashboard');
-  await page.evaluate((t: string) => localStorage.setItem('fin_token', t), token);
-  await page.reload();
   await page.waitForLoadState('domcontentloaded');
   return token;
 }
@@ -120,7 +123,7 @@ test.describe('@regression @mobile @finance Finance — transfer form', () => {
     if (!token) { test.skip(); return; }
 
     await page.goto('/BrightBank/transfer');
-    await page.waitForLoadState('domcontentloaded');
+    await page.waitForLoadState('networkidle');
 
     const scrollWidth = await page.evaluate(() => document.body.scrollWidth);
     const vw = await page.evaluate(() => window.innerWidth);
@@ -132,7 +135,7 @@ test.describe('@regression @mobile @finance Finance — transfer form', () => {
     if (!token) { test.skip(); return; }
 
     await page.goto('/BrightBank/transfer');
-    await page.waitForLoadState('domcontentloaded');
+    await page.waitForLoadState('networkidle');
 
     const amountInput = page.locator('#amount');
     await expect(amountInput).toBeVisible();
@@ -146,7 +149,7 @@ test.describe('@regression @mobile @finance Finance — transfer form', () => {
     if (!token) { test.skip(); return; }
 
     await page.goto('/BrightBank/transfer');
-    await page.waitForLoadState('domcontentloaded');
+    await page.waitForLoadState('networkidle');
 
     const btn = page.getByRole('button', { name: 'Review transfer' });
     await expect(btn).toBeVisible();
