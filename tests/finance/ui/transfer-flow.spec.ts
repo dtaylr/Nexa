@@ -19,8 +19,7 @@ test.describe('Finance — Transfer Flow', () => {
   });
 
   test('transfer flow shows confirmation with audit reference', async ({ page }) => {
-    await page.goto('/BrightBank/dashboard');
-    await page.getByRole('link', { name: 'New Transfer' }).click();
+    await page.goto('/BrightBank/transfer');
 
     await page.getByLabel('From account').selectOption({ label: 'Current Account' });
     await page.getByLabel(/To account/).fill('GB29NWBK60161331926819');

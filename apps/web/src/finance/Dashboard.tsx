@@ -100,13 +100,13 @@ function AccountCard({ acc, token }: { acc: Account; token: string }) {
 
       <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1.25rem' }}>
         <Link to={`/BrightBank/transfer?from=${acc.id}`} style={{ textDecoration: 'none' }}>
-          <button style={{ ...S.btn('#0066cc'), padding: '0.5rem 1rem', fontSize: '0.85rem' }}>
+          <button style={{ ...S.btn('#0066cc'), padding: '0.5rem 1rem', fontSize: '0.85rem', minHeight: 44 }}>
             Transfer
           </button>
         </Link>
         <button
           onClick={loadTxs}
-          style={{ background: 'none', border: '1px solid #d0d7de', padding: '0.5rem 1rem', borderRadius: 8, fontSize: '0.85rem', cursor: 'pointer', color: '#444' }}
+          style={{ background: 'none', border: '1px solid #d0d7de', padding: '0.5rem 1rem', borderRadius: 8, fontSize: '0.85rem', cursor: 'pointer', color: '#444', minHeight: 44 }}
         >
           {loading ? 'Loading…' : open ? 'Hide transactions' : 'Recent transactions'}
         </button>
@@ -205,10 +205,11 @@ export default function FinanceDashboard() {
         <div style={S.card}>
           <form onSubmit={login} noValidate>
             <div style={{ marginBottom: '1.25rem' }}>
-              <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 600, fontSize: '0.9rem', color: '#333' }}>
+              <label htmlFor="fin-email" style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 600, fontSize: '0.9rem', color: '#333' }}>
                 Email address
               </label>
               <input
+                id="fin-email"
                 style={S.inp}
                 type="email"
                 autoComplete="email"
@@ -219,9 +220,10 @@ export default function FinanceDashboard() {
             </div>
             <div style={{ marginBottom: '1.5rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
-                <label style={{ fontWeight: 600, fontSize: '0.9rem', color: '#333' }}>Password</label>
+                <label htmlFor="fin-password" style={{ fontWeight: 600, fontSize: '0.9rem', color: '#333' }}>Password</label>
               </div>
               <input
+                id="fin-password"
                 style={S.inp}
                 type="password"
                 autoComplete="current-password"
@@ -268,7 +270,7 @@ export default function FinanceDashboard() {
           </div>
           <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
             <Link to="/BrightBank/transfer" style={{ textDecoration: 'none' }}>
-              <button style={{ background: 'rgba(255,255,255,0.15)', border: '2px solid rgba(255,255,255,0.4)', color: '#fff', padding: '0.6rem 1.25rem', borderRadius: 8, fontWeight: 600, cursor: 'pointer', backdropFilter: 'blur(4px)', fontSize: '0.9rem' }}>
+              <button style={{ background: 'rgba(255,255,255,0.15)', border: '2px solid rgba(255,255,255,0.4)', color: '#fff', padding: '0.6rem 1.25rem', borderRadius: 8, fontWeight: 600, cursor: 'pointer', backdropFilter: 'blur(4px)', fontSize: '0.9rem', minHeight: 44 }}>
                 + Transfer
               </button>
             </Link>

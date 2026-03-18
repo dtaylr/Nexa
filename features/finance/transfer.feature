@@ -17,7 +17,8 @@ Feature: Bank Transfer
 
   Scenario: Transfer with insufficient funds returns a structured error
     Given my account has a balance of 1000 cents
-    When I attempt to transfer $20.00
+    And a destination account exists
+    When I attempt to transfer $99999.99
     Then the response status should be 422
     And the error should be "INSUFFICIENT_FUNDS"
     And the response should include the available balance
