@@ -102,7 +102,7 @@ const globalStd = Math.sqrt(amounts.reduce((s, v) => s + (v - globalMean) ** 2, 
 const labelled = rows.map(row => {
   const features = toFeatures(row, rows);
   const label: boolean =
-    features.amountZScore > 2.5 ||
+    features.amountZScore > 1.0 ||
     (features.amount > globalMean + globalStd && features.hourOfDay >= 1 && features.hourOfDay <= 5);
   return { features, label };
 });

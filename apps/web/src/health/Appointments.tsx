@@ -147,7 +147,7 @@ export default function Appointments({ booking = false }: Props) {
         </div>
         <button
           onClick={() => { setShowBook(true); setErrors({}); }}
-          style={{ background: '#2e7d32', color: '#fff', border: 'none', padding: '0.65rem 1.25rem', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}
+          style={{ background: '#2e7d32', color: '#fff', border: 'none', padding: '0.65rem 1.25rem', borderRadius: 8, cursor: 'pointer', fontWeight: 600, minHeight: 44 }}
         >
           + Book appointment
         </button>

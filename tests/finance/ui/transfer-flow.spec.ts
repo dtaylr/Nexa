@@ -21,19 +21,33 @@ test.describe('Finance — Transfer Flow', () => {
   test('transfer flow shows confirmation with audit reference', async ({ page }) => {
     await page.goto('/BrightBank/transfer');
 
-    await page.getByLabel('From account').selectOption({ label: 'Current Account' });
-    await page.getByLabel(/To account/).fill('GB29NWBK60161331926819');
-    await page.getByLabel('Amount').fill('150.00');
-    await page.getByLabel('Reference').fill('Rent - October');
+    // Wait for accounts to populate the From account select
+    await page.waitForFunction(() => {
+      const sel = document.querySelector('#from-account') as HTMLSelectElement;
+      return sel && sel.options.length > 1;
+    });
 
-    await page.getByRole('button', { name: 'Review Transfer' }).click();
+    // Select first real account as source (index 0 is placeholder "Select an account…")
+    await page.locator('#from-account').selectOption({ index: 1 });
 
-    await expect(page.getByTestId('transfer-amount')).toHaveText('.00');
+    // Destination: own-account mode is default — select first destination account
+    await page.locator('#to-account').selectOption({ index: 1 });
+
+    // Fill amount and reference using input IDs (labels include nested spans)
+    await page.locator('#amount').fill('150.00');
+    await page.locator('#reference').fill('Rent - October');
+
+    // Review step
+    await page.getByRole('button', { name: 'Review transfer' }).click();
+
+    await expect(page.getByTestId('transfer-amount')).toHaveText('$150.00');
     await expect(page.getByTestId('transfer-reference')).toHaveText('Rent - October');
 
-    await page.getByRole('button', { name: 'Confirm Transfer' }).click();
+    // Confirm
+    await page.getByRole('button', { name: 'Confirm transfer' }).click();
 
-    await expect(page.getByTestId('transfer-status')).toHaveText('Transfer Submitted');
+    // Confirmation screen
+    await expect(page.getByTestId('transfer-status')).toHaveText('Transfer submitted');
     await expect(page.getByTestId('audit-reference')).toBeVisible();
 
     const auditRef = await page.getByTestId('audit-reference').textContent();

@@ -196,7 +196,7 @@ export default function FinanceDashboard() {
 
   if (!token) {
     return (
-      <div style={{ maxWidth: 420, margin: '4rem auto' }}>
+      <div style={{ maxWidth: 560, margin: '4rem auto' }}>
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
           <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>🏦</div>
           <h1 style={{ margin: 0, fontSize: '1.75rem', color: '#1a1a2e' }}>Finance Portal</h1>
