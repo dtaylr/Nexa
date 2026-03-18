@@ -32,7 +32,7 @@ k8s/base/**/secret*.yaml
 k8s/helm/**/secrets.yaml
 k8s/helm/**/secret-*.yaml
 
-# Test results & reports (generated — not committed)
+# Test results & reports 
 results/
 artifacts/
 reports/
@@ -42,14 +42,14 @@ test-results/
 playwright-report/
 playwright/.cache/
 
-# Pact broker cache (generated pact contracts in pacts/ are committed)
+# Pact broker cache 
 pact/
 .pact/
 
 # Lighthouse
 .lighthouseci/
 
-# Stryker mutation testing
+# Stryker mutation 
 .stryker-tmp/
 reports/mutation/
 
@@ -57,8 +57,7 @@ reports/mutation/
 k6-results/
 k6-report*.json
 
-# AI / ML — trained model binaries & evaluation artifacts
-# (source code and unit tests in ai/ are committed; generated model files are not)
+# unit tests in ai/ are committed; generated model files are not)
 ai/ml/models/
 *.pkl
 *.joblib
