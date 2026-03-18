@@ -52,14 +52,14 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
       - run: npm ci
-      - run: mkdir -p results/api/${{ matrix.domain }} && npm run test:api:${{ matrix.domain }} -- --outputFile.junit=results/api/${{ matrix.domain }}/junit.xml
+      - run: npm run test:api:${{ matrix.domain }}
         env:
           DB_PATH: ':memory:'
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: api-results-${{ matrix.domain }}
-          path: results/api/${{ matrix.domain }}/junit.xml
+          path: results/vitest/api-${{ matrix.domain }}.junit.xml
 
   security-tests:
     name: Security (OWASP API Top 10)
@@ -72,14 +72,14 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
       - run: npm ci
-      - run: mkdir -p results/security && npm run test:security -- --outputFile.junit=results/security/junit.xml
+      - run: npm run test:security
         env:
           DB_PATH: ':memory:'
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: security-results
-          path: results/security/junit.xml
+          path: results/vitest/security.junit.xml
 
   #  BDD Tests - requires running API server
   bdd-tests:

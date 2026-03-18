@@ -131,23 +131,6 @@ npm run test:report
 
 Approximately 10 tests fail by design. Each failing test documents a seeded bug with the bug ID and the expected correct behavior in the assertion message. These failures are informative as they are the documentation.
 
----
-
-## Key Design Decisions
-
-**SQLite, not PostgreSQL.** No credentials, no external service, no cost. WAL mode handles concurrent reads. The race-condition bugs (BALANCE_RACE_CONDITION, INVENTORY_OVERSELL_RACE) are standard check-then-act mistakes that reproduce on any RDBMS — switching to PostgreSQL requires only changing the driver import.
-
-**Monetary values stored as integers (cents).** This prevents IEEE 754 drift at the storage layer. The float bug in SUMMARY_FLOAT_DRIFT is deliberate: the reporting query accumulates with plain JS `+`, which is the real-world mistake the test catches.
-
-**bcrypt cost=1 in tests.** Hash computation dominates auth test runtime. Cost=1 keeps the suite fast without changing the production cost factor (12).
-
-**In-memory SQLite per test file.** Each file gets a fresh database. No teardown scripts, no shared state, no ordering dependencies between files.
-
-**No mocking of internal dependencies.** Supertest hits the real Express router. Bugs at the handler-to-persistence boundary are caught directly, not hidden behind mocks.
-
-**JWT self-signed, no auth service.** The 30-second grace period in JWT_GRACE_PERIOD is a documented bad pattern. The test records it rather than skipping it. The fix is one line.
-
----
 
 ## CI Pipeline
 
