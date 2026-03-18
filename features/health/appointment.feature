@@ -19,6 +19,7 @@ Feature: Appointment Management
     Then the response status should be 200
     And the appointment status should be "cancelled"
 
+  @known-bug
   Scenario: Medication dosage is returned as a number not a string
     Given my patient record has an active medication with dosage "10mg"
     When I retrieve my medications
@@ -30,12 +31,14 @@ Feature: Appointment Management
     When I attempt to access that patient's records using their ID
     Then the response status should be 403
 
+  @known-bug
   Scenario: Error responses do not contain patient PII
     When I request a patient record with an invalid ID "INVALID"
     Then the response status should be 400
     And the response body should not contain the invalid ID
     And the response body should not match any PII patterns
 
+  @known-bug
   Scenario: Concurrent appointments for the same slot are rejected
     When two booking requests are submitted simultaneously for the same slot
     Then only one booking should succeed

@@ -46,7 +46,7 @@ interface TransferRow {
 
 const rows = db.prepare(`
   SELECT t.amount, t.created_at, t.from_account_id
-  FROM transfers t
+  FROM fin_transfers t
   ORDER BY t.created_at
 `).all() as TransferRow[];
 

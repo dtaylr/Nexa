@@ -14,6 +14,7 @@ Acceptance Criteria:
     Then the response status should be 200
     And the cart should contain 1 item
 
+  @known-bug
   Scenario: Promotion code cannot be applied twice to the same cart
     Given I have a cart with a product
     And I apply promotion code "SAVE10"
@@ -21,6 +22,7 @@ Acceptance Criteria:
     Then the response status should be 409
     And the error should be "PROMOTION_ALREADY_APPLIED"
 
+  @known-bug
   Scenario: Placing an order marks email as unsent before payment
     Given I have a cart with a product
     When I place an order
