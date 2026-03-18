@@ -41,6 +41,9 @@ function NavLink({ to, children, color }: { to: string; children: React.ReactNod
         background: active ? color : 'transparent',
         fontSize: '0.9rem',
         transition: 'all 0.15s',
+        display: 'inline-flex',
+        alignItems: 'center',
+        minHeight: 44,
       }}
     >
       {children}

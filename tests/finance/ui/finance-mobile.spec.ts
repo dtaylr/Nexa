@@ -134,7 +134,7 @@ test.describe('@regression @mobile @finance Finance — transfer form', () => {
     await page.goto('/BrightBank/transfer');
     await page.waitForLoadState('domcontentloaded');
 
-    const amountInput = page.getByLabel('Amount');
+    const amountInput = page.locator('#amount');
     await expect(amountInput).toBeVisible();
     const box = await amountInput.boundingBox();
     const vw = await page.evaluate(() => window.innerWidth);
@@ -148,7 +148,7 @@ test.describe('@regression @mobile @finance Finance — transfer form', () => {
     await page.goto('/BrightBank/transfer');
     await page.waitForLoadState('domcontentloaded');
 
-    const btn = page.getByRole('button', { name: 'Review Transfer' });
+    const btn = page.getByRole('button', { name: 'Review transfer' });
     await expect(btn).toBeVisible();
     const box = await btn.boundingBox();
     expect(box!.height).toBeGreaterThanOrEqual(44);

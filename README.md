@@ -1,12 +1,12 @@
 # 1Platform — Quality Engineering Showcase
 
-A full-stack multi-domain application with 15 intentional bugs and a test suite built to catch all of them.
+A full-stack multi-domain application with a test suite built to catch all of them.
 
 ---
 
 ## What It Is
 
-1Platform is a production-realistic web application spanning three business domains — Finance, Health, and Commerce. The application contains intentional bugs modeled after real engineering mistakes: race conditions, float arithmetic errors, IDOR vulnerabilities, PII leakage, and accessibility failures. The test suite is designed to catch every one of them including failures.
+1Platform is a web application spanning three business domains — Finance, Health, and Commerce. The application contains bugs, race conditions, float arithmetic errors, IDOR vulnerabilities, PII leakage, and accessibility failures. The test suite is designed to catch every one of them including failures.
 
 The goal is to show a test suite that surfaces the bugs which may appear for a variety of reasons. It documents exactly what broke and why and integrates into a CI pipeline that blocks bad code from merging.
 
