@@ -180,7 +180,7 @@ function buildAiSuggestions(failed: NormalizedTest[]): ReportData['aiSuggestions
     security:
       'Review OWASP API Top 10 handlers. Confirm input sanitisation, rate-limiting middleware, and error messages do not leak internal identifiers.',
     other:
-      'Cross-reference the failing test file against the seeded bug table in docs/INTERVIEW_DECISIONS.md for relevant context.',
+    ''
   };
 
   for (const [domain, tests] of Object.entries(byDomain)) {

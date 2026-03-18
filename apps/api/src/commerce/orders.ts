@@ -56,7 +56,7 @@ export function createOrder(req: AuthRequest, res: Response) {
 
 export function processPayment(req: AuthRequest, res: Response) {
   const { id: orderId } = req.params;
-  const { method, amount, currency = 'USD', cardToken } = req.body;
+  const { method, amount, currency = 'USD' } = req.body;
 
   if (!method || !amount) {
     return res.status(400).json({ error: 'method and amount are required' });

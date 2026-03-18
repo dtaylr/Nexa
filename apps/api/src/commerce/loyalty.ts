@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { db } from '../db';
 import { AuthRequest } from '../middleware/auth';
 
-function getTier(totalEarned: number): 'bronze' | 'silver' | 'gold' | 'platinum' {
+function _getTier(totalEarned: number): 'bronze' | 'silver' | 'gold' | 'platinum' {
   if (totalEarned >= 10000) return 'platinum';
   if (totalEarned >= 5000) return 'gold';
   if (totalEarned >= 1000) return 'silver';
