@@ -1,0 +1,27 @@
+meta {
+  name: Get Loyalty Points
+  type: http
+  seq: 14
+}
+
+get {
+  url: {{baseUrl}}/api/commerce/loyalty
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{shopperToken}}
+}
+
+tests {
+  test("Status 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Returns loyalty balance", function() {
+    const body = res.getBody();
+    expect(body).to.have.property("points");
+    expect(typeof body.points).to.equal("number");
+  });
+}

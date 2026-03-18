@@ -1,11 +1,17 @@
 FROM node:20-alpine
 
+# wget is used by the healthcheck
+RUN apk add --no-cache wget
+
 WORKDIR /app
 
+# Install dependencies first (layer cache)
 COPY package*.json ./
 COPY apps/api/package*.json ./apps/api/
-RUN npm ci --workspace=apps/api --ignore-scripts
+RUN apk add --no-cache python3 make g++ && \
+    npm ci --workspace=apps/api
 
+# Copy source and build
 COPY apps/api ./apps/api
 COPY db ./db
 

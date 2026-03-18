@@ -1,0 +1,29 @@
+meta {
+  name: Get Account by ID
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/api/finance/accounts/{{accountId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{aliceToken}}
+}
+
+tests {
+  test("Status 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Balance is a number", function() {
+    expect(res.getBody().balance).to.be.a("number");
+  });
+
+  test("Currency is USD", function() {
+    expect(res.getBody().currency).to.equal("USD");
+  });
+}

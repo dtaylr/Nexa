@@ -1,0 +1,231 @@
+{
+  "consumer": {
+    "name": "1Platform-Web-Checkout"
+  },
+  "interactions": [
+    {
+      "description": "a checkout request to create an order",
+      "providerStates": [
+        {
+          "name": "cart CART-001 exists with one item and active status"
+        }
+      ],
+      "request": {
+        "body": {
+          "cartId": "CART-001"
+        },
+        "headers": {
+          "Authorization": "Bearer token",
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "body": {
+            "$.cartId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Authorization": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "/api/commerce/orders"
+      },
+      "response": {
+        "body": {
+          "emailQueued": false,
+          "orderId": "ORD-001",
+          "status": "pending",
+          "total": 89.99
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "status": 201
+      }
+    },
+    {
+      "description": "a valid card payment request",
+      "providerStates": [
+        {
+          "name": "order ORD-001 exists and is awaiting payment"
+        }
+      ],
+      "request": {
+        "body": {
+          "amount": 89.99,
+          "cardToken": "tok_test_visa",
+          "currency": "USD",
+          "method": "card"
+        },
+        "headers": {
+          "Authorization": "Bearer token",
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "body": {
+            "$.amount": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.cardToken": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.currency": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.method": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Authorization": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "/api/commerce/orders/ORD-001/payment"
+      },
+      "response": {
+        "body": {
+          "amountCharged": 89.99,
+          "currency": "USD",
+          "emailQueued": true,
+          "orderId": "ORD-001",
+          "paymentId": "pay-a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+          "receiptUrl": "/receipts/pay-001",
+          "status": "CAPTURED"
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "status": 200
+      }
+    },
+    {
+      "description": "a request for all available products",
+      "providerStates": [
+        {
+          "name": "products exist in the catalogue"
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "path": "/api/commerce/products"
+      },
+      "response": {
+        "body": {
+          "products": [
+            {
+              "id": "prod-001",
+              "inventory": 47,
+              "name": "Running Shoes V2",
+              "price": 89.99
+            }
+          ]
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "body": {
+            "$.products": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.products[*].id": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.products[*].inventory": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.products[*].name": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.products[*].price": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          },
+          "status": {}
+        },
+        "status": 200
+      }
+    }
+  ],
+  "metadata": {
+    "pact-js": {
+      "version": "12.5.2"
+    },
+    "pactRust": {
+      "ffi": "0.4.20",
+      "models": "1.2.0"
+    },
+    "pactSpecification": {
+      "version": "3.0.0"
+    }
+  },
+  "provider": {
+    "name": "1Platform-Commerce-API"
+  }
+}

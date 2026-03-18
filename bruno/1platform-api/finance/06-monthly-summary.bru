@@ -1,0 +1,32 @@
+meta {
+  name: Monthly Summary Report
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{baseUrl}}/api/finance/reports/monthly-summary
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{aliceToken}}
+}
+
+tests {
+  test("Status 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("BUG SUMMARY_FLOAT_DRIFT — totalIn should be exact decimal, not float-imprecise", function() {
+    const body = res.getBody();
+    if (body.totalIn !== undefined) {
+      const str = String(body.totalIn);
+      const decimalPlaces = str.includes(".") ? str.split(".")[1].length : 0;
+      if (decimalPlaces > 2) {
+        console.warn("SUMMARY_FLOAT_DRIFT: Float precision issue — totalIn =", body.totalIn);
+      }
+    }
+  });
+}

@@ -1,0 +1,21 @@
+meta {
+  name: Unauthenticated Access — Negative Test
+  type: http
+  seq: 16
+}
+
+get {
+  url: {{baseUrl}}/api/commerce/orders
+  body: none
+  auth: none
+}
+
+tests {
+  test("Status 401 without token", function() {
+    expect(res.getStatus()).to.equal(401);
+  });
+
+  test("Returns error message", function() {
+    expect(res.getBody().error).to.be.a("string");
+  });
+}

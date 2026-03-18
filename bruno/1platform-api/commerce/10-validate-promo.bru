@@ -1,0 +1,40 @@
+meta {
+  name: Validate Promo Code
+  type: http
+  seq: 10
+}
+
+post {
+  url: {{baseUrl}}/api/commerce/promotions/validate
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{shopperToken}}
+}
+
+body:json {
+  {
+    "code": "SAVE10",
+    "cartId": "{{cartId}}"
+  }
+}
+
+tests {
+  test("Status 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Returns discount", function() {
+    const body = res.getBody();
+    expect(body).to.have.property("discount");
+    expect(typeof body.discount).to.equal("number");
+  });
+
+  // BUG PROMO_CODE_STACKING: Promo codes can be applied multiple times (no duplicate check).
+  // Run this request twice on the same cartId to reproduce.
+  test("BUG PROMO_CODE_STACKING — promo stacking check", function() {
+    console.warn("PROMO_CODE_STACKING: apply the same promo code twice to reproduce — no duplicate guard exists");
+  });
+}

@@ -1,0 +1,15 @@
+apiVersion: v2
+name: 1platform
+description: 1Platform multi-domain quality engineering platform
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+keywords:
+  - 1platform
+  - quality-engineering
+  - sdet
+maintainers:
+  - name: 1Platform Platform Team
+home: https://github.com/1platform/1platform
+sources:
+  - https://github.com/1platform/1platform

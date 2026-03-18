@@ -1,0 +1,34 @@
+meta {
+  name: Create Appointment
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/api/health/appointments
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{patientToken}}
+}
+
+body:json {
+  {
+    "patientId": {{patientId}},
+    "doctorId": "dr-chen-001",
+    "datetime": "2026-06-15T10:00:00.000Z",
+    "notes": "Annual check-up"
+  }
+}
+
+tests {
+  test("Status 201", function() {
+    expect(res.getStatus()).to.equal(201);
+  });
+
+  test("Returns appointment ID", function() {
+    expect(res.getBody().id).to.be.a("string");
+  });
+}

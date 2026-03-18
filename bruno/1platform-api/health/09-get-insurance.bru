@@ -1,0 +1,25 @@
+meta {
+  name: Get Insurance
+  type: http
+  seq: 9
+}
+
+get {
+  url: {{baseUrl}}/api/health/patients/{{patientId}}/insurance
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{patientToken}}
+}
+
+tests {
+  test("Status 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Returns insurance array", function() {
+    expect(res.getBody().insurance).to.be.an("array");
+  });
+}

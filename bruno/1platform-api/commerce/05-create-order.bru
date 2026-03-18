@@ -1,0 +1,51 @@
+meta {
+  name: Create Order
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/api/commerce/orders
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{shopperToken}}
+}
+
+body:json {
+  {
+    "cartId": "{{cartId}}"
+  }
+}
+
+tests {
+  test("Status 201", function() {
+    expect(res.getStatus()).to.equal(201);
+  });
+
+  test("Returns orderId and total", function() {
+    const body = res.getBody();
+    expect(body.orderId).to.be.a("string");
+    expect(body.total).to.be.a("number");
+    expect(body.status).to.equal("pending");
+  });
+
+  test("Store orderId for downstream requests", function() {
+    const orderId = res.getBody().orderId;
+    if (orderId) {
+      bru.setEnvVar("orderId", orderId);
+      console.log("orderId set:", orderId);
+    }
+  });
+
+  // BUG INVENTORY_OVERSELL_RACE: inventory check and deduct are not atomic — concurrent orders can oversell.
+  // BUG EMAIL_BEFORE_PAYMENT: emailQueued is true at order creation, before payment is taken.
+  test("BUG EMAIL_BEFORE_PAYMENT — email flagged before payment", function() {
+    const body = res.getBody();
+    if (body.emailQueued === true) {
+      console.warn("EMAIL_BEFORE_PAYMENT: emailQueued=true returned at order creation — payment not yet processed");
+    }
+  });
+}

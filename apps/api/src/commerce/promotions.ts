@@ -22,7 +22,7 @@ export function validatePromotion(req: AuthRequest, res: Response) {
     return res.status(409).json({ error: 'PROMOTION_EXPIRED' });
   }
 
-  // BUG COM-001: no check for whether this promotion code is already applied to this cart.
+  // BUG PROMO_CODE_STACKING: no check for whether this promotion code is already applied to this cart.
   // The same code can be applied multiple times, stacking discounts to 100% or beyond.
   db.prepare('INSERT INTO com_cart_promotions (id, cartId, promotionId) VALUES (?, ?, ?)').run(
     uuidv4(), cartId, promotion.id

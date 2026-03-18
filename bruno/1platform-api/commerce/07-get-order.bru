@@ -1,0 +1,28 @@
+meta {
+  name: Get Order
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{baseUrl}}/api/commerce/orders/{{orderId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{shopperToken}}
+}
+
+tests {
+  test("Status 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Returns order with items", function() {
+    const order = res.getBody();
+    expect(order).to.have.property("id");
+    expect(order).to.have.property("status");
+    expect(order.items).to.be.an("array");
+  });
+}

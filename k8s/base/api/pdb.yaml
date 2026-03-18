@@ -1,0 +1,15 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: 1platform-api
+  namespace: 1platform
+  labels:
+    app.kubernetes.io/name: 1platform-api
+    app.kubernetes.io/part-of: 1platform
+spec:
+  # At least 1 pod must stay available during voluntary disruptions
+  # (node drain, cluster upgrades). Prevents full outage during maintenance.
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: 1platform-api

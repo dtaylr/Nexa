@@ -1,0 +1,25 @@
+meta {
+  name: List Beneficiaries
+  type: http
+  seq: 10
+}
+
+get {
+  url: {{baseUrl}}/api/finance/beneficiaries
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{aliceToken}}
+}
+
+tests {
+  test("Status 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Returns beneficiaries array", function() {
+    expect(res.getBody().beneficiaries).to.be.an("array");
+  });
+}

@@ -19,7 +19,7 @@ export function getMedications(req: AuthRequest, res: Response) {
   return res.json({
     resourceType: 'MedicationStatement',
     patientId: id,
-    // BUG HLT-001: dosage is returned as a string because the DB column is TEXT.
+    // BUG DOSAGE_TYPE_MISMATCH: dosage is returned as a string because the DB column is TEXT.
     // Consumers expecting a number will receive "10" instead of 10, breaking calculations.
     medications: medications.map(m => ({
       id: m.id,

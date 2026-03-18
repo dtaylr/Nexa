@@ -1,322 +1,175 @@
-# NexaCore Platform
+# 1Platform — Quality Engineering Showcase
 
-A multi-domain quality engineering showcase built to demonstrate SDET work across three industries: **Finance**, **Healthcare**, and **E-Commerce**.
-
-The platform is two things in one repo:
-
-1. **NexaCore** — a Node.js + Express API and React frontend that models real domain logic for each industry, including intentionally seeded bugs that mirror the failure modes these industries actually care about.
-2. **TestOps Intelligence** — the test suite, CI pipeline, and AI triage engine that runs against it.
-
-Every bug, every test assertion, and every CI job maps to a real business risk in its domain.
+A full-stack multi-domain application with 15 intentional bugs and a test suite built to catch all of them.
 
 ---
 
-## Prerequisites
+## What It Is
 
-- Node.js 20+
-- npm 10+
+1Platform is a production-realistic web application spanning three business domains — Finance, Health, and Commerce. The application contains intentional bugs modeled after real engineering mistakes: race conditions, float arithmetic errors, IDOR vulnerabilities, PII leakage, and accessibility failures. The test suite is designed to catch every one of them including failures.
 
-No external services, databases, or paid APIs required. Everything runs locally with SQLite.
+The goal is to show a test suite that surfaces the bugs which may appear for a variety of reasons. It documents exactly what broke and why and integrates into a CI pipeline that blocks bad code from merging.
 
 ---
 
-## Getting Started
+## Tech Stack
+
+| Layer    | Technology                                                                                               |
+| -------- | -------------------------------------------------------------------------------------------------------- |
+| API      | Express 4 + TypeScript, better-sqlite3 (WAL mode), jsonwebtoken, bcryptjs, uuid                          |
+| Web      | React 18 + Vite + react-router-dom (TypeScript)                                                          |
+| Tests    | Vitest, Playwright + @axe-core, Pact (consumer contracts), Stryker (mutation), k6 (load), Cucumber (BDD) |
+| CI       | GitHub Actions — nightly regression pipeline, 5-layer architecture                                       |
+| Database | SQLite file-based (dev), SQLite in-memory (tests) — no external services required                        |
+
+---
+
+## The Intentional Bugs
+
+Every seeded bug has a dedicated test that catches it. Tests reference the bug ID in the assertion message so a developer reading a red build immediately understands what broke and how to fix it.
+
+### Finance Domain
+
+| ID                     | Description                                             | Location               |
+| ---------------------- | ------------------------------------------------------- | ---------------------- |
+| AUDIT_SILENT_FAILURE   | Async audit write (fire-and-forget) can silently fail   | `finance/transfers.ts` |
+| SUMMARY_FLOAT_DRIFT    | Float arithmetic accumulation in monthly summary report | `finance/reports.ts`   |
+| JWT_GRACE_PERIOD       | 30-second JWT grace period accepts expired tokens       | `middleware/auth.ts`   |
+| BALANCE_RACE_CONDITION | Non-atomic balance check creates a race condition       | `finance/transfers.ts` |
+| ACCOUNT_ID_DISCLOSURE  | Account ID leaked in 404 error response body            | `finance/accounts.ts`  |
+
+### Health Domain
+
+| ID                         | Description                                           | Location                            |
+| -------------------------- | ----------------------------------------------------- | ----------------------------------- |
+| DOSAGE_TYPE_MISMATCH       | Medication dosage stored as TEXT, not numeric         | DB schema + `health/medications.ts` |
+| PATIENT_PII_DISCLOSURE     | Patient ID echoed in 400 error response (PII leakage) | `health/patients.ts`                |
+| APPOINTMENT_DOUBLE_BOOKING | No conflict check on concurrent appointment booking   | `health/appointments.ts`            |
+| CANCEL_DIALOG_FOCUS_TRAP   | No focus trap in cancel appointment dialog            | `web/health/Appointments.tsx`       |
+| PATIENT_RECORDS_IDOR       | IDOR — no ownership check on patient endpoints        | `health/patients.ts`                |
+
+### Commerce Domain
+
+| ID                       | Description                                               | Location                    |
+| ------------------------ | --------------------------------------------------------- | --------------------------- |
+| PROMO_CODE_STACKING      | Promo code can be applied multiple times (no dedup check) | `commerce/promotions.ts`    |
+| INVENTORY_OVERSELL_RACE  | Inventory check and decrement are not atomic              | `commerce/orders.ts`        |
+| EMAIL_BEFORE_PAYMENT     | Fraud flag written before payment is confirmed            | `commerce/orders.ts`        |
+| CHECKOUT_MOBILE_OVERFLOW | No max-width on checkout inputs causes horizontal scroll  | `web/commerce/Checkout.tsx` |
+| PRICE_FLOAT_PRECISION    | Product prices returned as raw IEEE 754 floats            | `commerce/products.ts`      |
+
+---
+
+## Test Architecture
+
+The suite is organized into distinct layers, each targeting a different failure class:
+
+| Layer              | Tool                  | What It Targets                                                |
+| ------------------ | --------------------- | -------------------------------------------------------------- |
+| Smoke / P0         | Vitest + Supertest    | Core happy paths — confirms the app boots and basic flows work |
+| Regression / P1    | Vitest + Supertest    | Known bug scenarios, edge cases, boundary values               |
+| Negative           | Vitest + Supertest    | Invalid input, auth failures, 4xx/5xx response contracts       |
+| Security           | Vitest + Supertest    | OWASP API Top 10 — injection, IDOR, broken auth, alg:none      |
+| Consumer Contracts | Pact                  | API shape agreements between frontend and backend              |
+| BDD                | Cucumber + Gherkin    | Business-readable scenarios for all three domains              |
+| Accessibility      | Playwright + axe-core | WCAG 2.1 AA compliance across all domain UIs                   |
+| E2E / Visual       | Playwright            | Browser flows, mobile viewports, screenshot regression         |
+| Chaos / ML         | Vitest + custom       | Anomaly detection, flakiness scoring, domain-aware triage      |
+| Load               | k6                    | Finance transfer throughput, commerce browse under concurrency |
+| Mutation           | Stryker               | Test suite quality — confirms assertions are meaningful        |
+
+API tests run against the real Express app with a real in-memory SQLite database. No mocks, no stubs for internal dependencies. This catches the class of bugs that only surface at the boundary between route handler, business logic, and persistence — which is where most of the seeded bugs live.
+
+---
+
+## Running the App
+
+Prerequisites: Node.js 20+, npm 10+. No external services or paid APIs required.
 
 ```bash
 npm install
-npm run seed       # creates data/nexacore.db with fixture data
-npm run dev        # starts API on :3001 and web on :3000 concurrently
+npm run seed    # creates data/1platform.db with fixture data
+npm run dev     # starts API on :3001 and web on :6173 concurrently
 ```
 
 The API health check is at `http://localhost:3001/health`.
 
-### Demo credentials (created by seed)
-
-| User | Email | Password | Role |
-|---|---|---|---|
-| Alice | alice@nexacore.dev | password123 | banker |
-| Bob | bob@nexacore.dev | password123 | banker |
-| Patient 1 | patient.one@nexacore.dev | password123 | patient |
-| Patient 2 | patient.two@nexacore.dev | password123 | patient |
-| Shopper | shopper@nexacore.dev | password123 | shopper |
-
-Get a token:
-```bash
-curl -s -X POST http://localhost:3001/api/auth/login \
-  -H 'Content-Type: application/json' \
-  -d '{"email":"alice@nexacore.dev","password":"password123"}' | jq .token
-```
-
 ---
 
-## Finance Domain
-
-Models a retail banking module. Business logic covers account balances (stored as integer pence), inter-account transfers, audit trail integrity, and monthly reporting.
-
-### Endpoints
-
-```
-POST /api/auth/login
-GET  /api/finance/accounts/:id
-GET  /api/finance/accounts/:id/transactions
-POST /api/finance/transfers
-GET  /api/finance/transfers/:id/audit
-GET  /api/finance/reports/monthly-summary
-```
-
-### Seeded bugs
-
-| ID | What it is | Where |
-|---|---|---|
-| FIN-001 | Audit log write is fire-and-forget — can silently fail under load | `apps/api/src/finance/transfers.ts` |
-| FIN-002 | Monthly summary uses plain JS addition — `0.1 + 0.2 = 0.30000000000000004` | `apps/api/src/finance/reports.ts` |
-| FIN-003 | JWT tokens are accepted for 30 seconds after expiry (grace period bug) | `apps/api/src/middleware/auth.ts` |
-| FIN-004 | Balance check and debit are not wrapped in a transaction — race condition | `apps/api/src/finance/transfers.ts` |
-| FIN-005 | Account ID is echoed back in 404 error response body | `apps/api/src/finance/accounts.ts` |
-
-### Run finance tests
+## Running Tests
 
 ```bash
-npm run test:api:finance
-```
-
----
-
-## Healthcare Domain
-
-Models a patient portal. Business logic covers patient records, appointment scheduling, and medication data. FHIR-adjacent response shapes are used for medication resources.
-
-### Endpoints
-
-```
-POST /api/auth/login
-GET  /api/health/patients/:id
-GET  /api/health/patients/:id/records
-GET  /api/health/patients/:id/appointments
-POST /api/health/appointments
-PUT  /api/health/appointments/:id/cancel
-GET  /api/health/patients/:id/medications
-```
-
-### Seeded bugs
-
-| ID | What it is | Where |
-|---|---|---|
-| HLT-001 | Medication dosage is stored as `TEXT` — returned as `"10"` not `10` | `apps/api/src/db.ts` schema + `medications.ts` |
-| HLT-002 | Patient ID is echoed in 400 error response (PII leakage) | `apps/api/src/health/patients.ts` |
-| HLT-003 | No conflict check on concurrent appointment booking — double-booking possible | `apps/api/src/health/appointments.ts` |
-| HLT-004 | Cancel appointment dialog has no focus trap or autofocus (keyboard navigation broken) | `apps/web/src/health/Appointments.tsx` |
-| HLT-005 | Patient records have no ownership check — any authenticated user can access any patient by ID (IDOR) | `apps/api/src/health/patients.ts` |
-
-### Run health tests
-
-```bash
-# API tests
-npm run test:api:health
-
-# WCAG 2.1 AA accessibility tests (requires running web server)
-npm run test:a11y
-```
-
----
-
-## E-Commerce Domain
-
-Models a product catalogue, cart, and checkout flow. Business logic covers inventory management, promotion validation, order creation, and payment sequencing.
-
-### Endpoints
-
-```
-GET  /api/commerce/products
-GET  /api/commerce/products/:id
-POST /api/commerce/cart
-PUT  /api/commerce/cart/:id/items
-POST /api/commerce/orders
-POST /api/commerce/orders/:id/payment
-GET  /api/commerce/orders/:id
-POST /api/commerce/promotions/validate
-```
-
-### Seeded products
-
-| ID | Name | Price | Stock |
-|---|---|---|---|
-| (uuid) | Running Shoes V2 | £89.99 | 47 |
-| (uuid) | Waterproof Trail Jacket | £149.99 | 23 |
-| (uuid) | Technical Backpack 28L | £74.95 | 31 |
-| (uuid) | GPS Sport Watch | £199.99 | 12 |
-| PROD-999 | Limited Edition Cap | £29.99 | 1 (last item — race condition test) |
-
-### Seeded promotion codes
-
-| Code | Type | Value |
-|---|---|---|
-| SAVE10 | percentage | 10% |
-| FLAT5 | fixed | £5 |
-
-### Seeded bugs
-
-| ID | What it is | Where |
-|---|---|---|
-| COM-001 | Same promotion code can be applied multiple times to one cart | `apps/api/src/commerce/promotions.ts` |
-| COM-002 | Inventory check and decrement are not atomic — concurrent last-item orders both succeed | `apps/api/src/commerce/orders.ts` |
-| COM-003 | `emailSent` is flagged at order creation, before payment is processed | `apps/api/src/commerce/orders.ts` |
-| COM-005 | Checkout inputs have no `max-width` — causes horizontal scroll on 375px viewport | `apps/web/src/commerce/Checkout.tsx` |
-| COM-006 | Product prices are returned as raw SQLite `REAL` floats without rounding | `apps/api/src/commerce/products.ts` |
-
-### Run commerce tests
-
-```bash
-# API tests
-npm run test:api:commerce
-
-# Mobile checkout E2E (390px viewport, requires running web server)
-npx playwright test tests/commerce/ui
-```
-
----
-
-## Running the Full Test Suite
-
-### API Tests
-
-```bash
+# Domain API suites (smoke + regression + negative combined)
 npm run test:api:finance
 npm run test:api:health
 npm run test:api:commerce
-```
 
-### BDD — Cucumber / Gherkin
-
-Executable Gherkin scenarios live in `features/`. Run them against a live server:
-
-```bash
-npm run dev          # start API + web in background
-npm run test:bdd     # runs all .feature files, outputs HTML report to artifacts/
-```
-
-Feature files: `features/finance/transfer.feature`, `features/health/appointment.feature`, `features/commerce/checkout.feature`. Scenarios are written to be readable by non-engineers — each one maps directly to a seeded bug or business rule.
-
-### Contract Tests (Pact)
-
-Consumer-driven contract tests assert exact response shapes without a running server. They produce Pact files in `pacts/` that can be verified against the provider.
-
-```bash
-npm run test:contracts:finance    # transfer + accounts contracts
-npm run test:contracts:commerce   # order + payment contracts
-npm run test:contracts:health     # (placeholder — extend as needed)
-```
-
-Key assertions: Finance contracts enforce `auditId` presence (catches FIN-001) and the absence of `accountId` in 404 bodies (catches FIN-005). Commerce contracts enforce `emailQueued: false` at order creation time (catches COM-003).
-
-### Security Tests (OWASP API Top 10)
-
-```bash
+# Security (OWASP API Top 10)
 npm run test:security
-```
 
-Covers: IDOR cross-user access (API1), missing/malformed/expired/wrong-secret/`alg:none` tokens (API2), role escalation via registration (API5), SQL injection in login and transfer endpoints, path traversal, negative amounts, oversized payloads, and security headers from Helmet.
+# Consumer contract tests
+npm run test:contracts:finance
+npm run test:contracts:health
+npm run test:contracts:commerce
 
-### Mutation Testing (Stryker)
-
-Measures test suite quality by introducing code mutations and checking that at least one test fails for each. Requires no running server.
-
-```bash
-npm run test:mutation
-```
-
-Targets `apps/api/src/finance/`, `health/`, and `commerce/`. Thresholds: break at 60%, low at 70%, high at 85%. Reports written to `artifacts/mutation-report.html` and `artifacts/mutation-report.json`.
-
-### Load Tests (k6)
-
-End-of-month volume simulation for Finance and catalogue-browse simulation for Commerce. Requires k6 installed (`brew install k6` on macOS).
-
-```bash
-npm run seed && npm run dev:api &
-npm run test:load:finance    # ramps to 200 VUs, checks P95 < 500ms, audit ID presence, no account leakage
-npm run test:load:commerce   # ramps to 50 VUs, checks P95 < 200ms, price decimal accuracy
-```
-
-Results written to `artifacts/k6-finance-summary.json` and `artifacts/k6-commerce-summary.json`.
-
-### Visual Regression
-
-Captures PNG baselines and diffs on subsequent runs. Finance dashboard balance values are masked to avoid noise from dynamic data.
-
-```bash
-# First run — generates baselines in tests/visual/__snapshots__/
-npm run test:visual
-
-# Accept intentional design changes
-npm run test:visual:update
-```
-
-Viewports tested: desktop 1280×720 and mobile 390×844 (iPhone 14). Max pixel diff ratio: 2%.
-
-### E2E and Accessibility
-
-```bash
-# E2E (start dev servers first with `npm run dev`)
-npx playwright test tests/commerce/ui
-
-# Accessibility (WCAG 2.1 AA)
+# Accessibility (WCAG 2.1 AA) — requires running web server
 npm run test:a11y
+
+# BDD / Gherkin — requires running web server
+npm run test:bdd
+
+# Load tests — requires k6 installed and running API
+npm run test:load:finance
+npm run test:load:commerce
+
+# Mutation testing
+npm run test:mutation
+
+# All API domains + generate HTML report
+npm run test:report
 ```
 
----
+Approximately 10 tests fail by design. Each failing test documents a seeded bug with the bug ID and the expected correct behavior in the assertion message. These failures are informative as they are the documentation.
 
-## AI Triage Report
-
-After a test run that produces JUnit XML output, the triage engine classifies failures against a domain-specific pattern taxonomy and recommends remediation actions.
-
-```bash
-npm run triage:analyze
-```
-
-Output is written to `artifacts/triage-report.json`. Finance and healthcare CRITICAL failures set exit code 1 to block automated merges. On pull requests the CI pipeline posts a summary comment with severity icons directly to the PR.
-
----
-
-## CI Cost Report
-
-```bash
-npm run cost:report
-```
-
-Produces `artifacts/cost-report.json` with estimated runner cost, total defects caught, and cost-per-defect for the current month. GitHub Actions public repo usage is free; the report uses private repo pricing as a reference baseline.
-
----
 
 ## CI Pipeline
 
 The nightly regression workflow (`.github/workflows/nightly-regression.yml`) runs at 02:00 UTC Monday–Friday and on every pull request against `main`.
 
 ```
-Layer 1 — Contract tests (per domain, parallel, no server needed)
-  ↓
+Layer 1 — Contract tests (per domain, parallel, no server required)
 Layer 2 — API tests + Security tests (per domain, parallel)
-  ↓
-Layer 3 — BDD + E2E (sharded 2×) + Accessibility + Visual regression (all parallel)
-  ↓
-Layer 4 — Load tests (k6, nightly/manual only — skipped on PRs)
-  ↓
-Layer 5 — AI triage + cost report (always runs, posts PR comment on pull_request events)
+Layer 3 — BDD + E2E + Accessibility + Visual regression (parallel)
+Layer 4 — Load tests (nightly/manual only, skipped on PRs)
+Layer 5 — AI triage + cost report (always runs, posts PR comment)
 ```
 
-Each domain fails independently. Load tests use `continue-on-error: true` so a threshold breach surfaces in the report without blocking the pipeline.
+Finance and health CRITICAL failures set a non-zero exit code to block automated merges. Commerce failures are treated as lower severity unless the checkout flow is broken.
 
 ---
 
-## Docker
+## Reports and Artifacts
 
-```bash
-docker compose up
-```
-
-Builds and starts the API on `:3001` and the web frontend on `:3000`. The API container seeds the database on first run.
+| Report                          | Path                                |
+| ------------------------------- | ----------------------------------- |
+| Vitest JSON + HTML coverage     | `results/vitest/`                   |
+| Playwright traces + screenshots | `results/playwright/`               |
+| Mutation report                 | `artifacts/mutation-report.html`    |
+| k6 load summaries               | `artifacts/k6-finance-summary.json` |
+| AI triage output                | `artifacts/triage-report.json`      |
+| CI cost estimate                | `artifacts/cost-report.json`        |
 
 ---
 
-## Architecture Decisions
+## Repository Structure
 
-See [docs/INTERVIEW_DECISIONS.md](docs/INTERVIEW_DECISIONS.md) for the reasoning behind choices in this project — database selection, monetary storage format, intentional bug implementation patterns, and test strategy choices.
+```
+apps/api/src/          Express API — finance/, health/, commerce/, auth/, middleware/
+apps/web/src/          React frontend — finance/, health/, commerce/
+db/seed.ts             Realistic seed data for all three domains
+tests/                 Test suites organized by domain and layer
+ai/triage-engine/      Domain-aware failure classification
+.github/workflows/     CI pipeline definitions
+```
+
+---

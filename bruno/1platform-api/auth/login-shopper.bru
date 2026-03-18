@@ -1,0 +1,29 @@
+meta {
+  name: Login — Shopper
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/api/auth/login
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "shopper@1platform.dev",
+    "password": "password123"
+  }
+}
+
+tests {
+  test("Status 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Stores shopper token", function() {
+    const body = res.getBody();
+    bru.setEnvVar("shopperToken", body.token);
+  });
+}

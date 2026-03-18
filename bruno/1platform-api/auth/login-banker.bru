@@ -1,0 +1,36 @@
+meta {
+  name: Login — Banker (alice)
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/auth/login
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "alice@1platform.dev",
+    "password": "password123"
+  }
+}
+
+tests {
+  test("Status 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Returns JWT token", function() {
+    const body = res.getBody();
+    expect(body.token).to.be.a("string");
+    bru.setEnvVar("aliceToken", body.token);
+    bru.setEnvVar("authToken", body.token);
+  });
+
+  test("User role is banker", function() {
+    const body = res.getBody();
+    expect(body.user.role).to.equal("banker");
+  });
+}

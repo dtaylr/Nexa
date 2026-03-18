@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'nexacore-dev-secret';
+const JWT_SECRET = process.env.JWT_SECRET || '1platform-dev-secret';
 
 export interface AuthRequest extends Request {
   user?: { id: number; email: string; role: string };
@@ -17,7 +17,7 @@ export function authenticate(req: AuthRequest, res: Response, next: NextFunction
   try {
     const decoded = jwt.verify(token, JWT_SECRET, { ignoreExpiration: true }) as any;
 
-    // BUG FIN-003: tokens remain valid for 30 seconds after expiry
+    // BUG JWT_GRACE_PERIOD: tokens remain valid for 30 seconds after expiry
     const now = Math.floor(Date.now() / 1000);
     if (decoded.exp < now - 30) {
       return res.status(401).json({ error: 'Token expired' });

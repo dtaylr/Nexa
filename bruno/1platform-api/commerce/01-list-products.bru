@@ -1,0 +1,41 @@
+meta {
+  name: List Products
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/commerce/products
+  body: none
+  auth: none
+}
+
+tests {
+  test("Status 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Returns products array", function() {
+    expect(res.getBody().products).to.be.an("array");
+    expect(res.getBody().products.length).to.be.above(0);
+  });
+
+  test("Store first productId for downstream requests", function() {
+    const products = res.getBody().products;
+    if (products && products.length > 0) {
+      bru.setEnvVar("productId", products[0].id);
+      console.log("productId set:", products[0].id);
+    }
+  });
+
+  // BUG PRICE_FLOAT_PRECISION: prices are raw REAL floats from SQLite (e.g. 19.999999999 instead of 20.00)
+  test("BUG PRICE_FLOAT_PRECISION — product prices may have float precision issues", function() {
+    const products = res.getBody().products;
+    products.forEach(p => {
+      const decimals = (p.price.toString().split(".")[1] || "").length;
+      if (decimals > 2) {
+        console.warn("PRICE_FLOAT_PRECISION: product", p.id, "price has", decimals, "decimal places:", p.price);
+      }
+    });
+  });
+}
