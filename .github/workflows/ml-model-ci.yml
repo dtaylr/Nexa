@@ -55,9 +55,9 @@ jobs:
       - run: npm ci
 
       - name: Seed database
-        run: mkdir -p data && npm run seed
+        run: npm run seed
         env:
-          DB_PATH: data/1platform.db
+          DB_PATH: ${{ github.workspace }}/data/1platform.db
 
       - name: Train and evaluate anomaly detector
         id: evaluate
@@ -67,7 +67,7 @@ jobs:
             --threshold-precision 0.80 \
             --threshold-recall 0.75
         env:
-          DB_PATH: data/1platform.db
+          DB_PATH: ${{ github.workspace }}/data/1platform.db
 
       - name: Parse evaluation results
         run: |
