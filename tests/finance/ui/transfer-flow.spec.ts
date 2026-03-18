@@ -13,16 +13,18 @@ async function loginAndGetToken(page: any, email: string, password: string): Pro
 test.describe('Finance — Transfer Flow', () => {
   test.beforeEach(async ({ page }) => {
     const token = await loginAndGetToken(page, 'alice@1platform.dev', 'password123');
-    await page.goto('/BrightBank/dashboard');
-    await page.evaluate(t => localStorage.setItem('fin_token', t), token);
-    await page.reload();
+    // addInitScript injects the token before React mounts — reliable across all browsers
+    await page.addInitScript((t: string) => {
+      window.localStorage.setItem('fin_token', t);
+    }, token);
+    await page.goto('/BrightBank/transfer');
+    // Wait for the accounts API to complete so #from-account options are populated
+    await page.waitForLoadState('networkidle');
   });
 
   test('transfer flow shows confirmation with audit reference', async ({ page }) => {
-    await page.goto('/BrightBank/transfer');
-
-    // Wait for accounts API to complete before interacting with the select
-    await page.waitForLoadState('networkidle');
+    // Wait for the first real account option to appear (index 1, after the placeholder)
+    await page.waitForSelector('#from-account option:nth-child(2)');
 
     // Select first real account as source (index 0 is placeholder "Select an account…")
     await page.locator('#from-account').selectOption({ index: 1 });
