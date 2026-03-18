@@ -21,11 +21,8 @@ test.describe('Finance — Transfer Flow', () => {
   test('transfer flow shows confirmation with audit reference', async ({ page }) => {
     await page.goto('/BrightBank/transfer');
 
-    // Wait for accounts to populate the From account select
-    await page.waitForFunction(() => {
-      const sel = document.querySelector('#from-account') as HTMLSelectElement;
-      return sel && sel.options.length > 1;
-    });
+    // Wait for accounts API to complete before interacting with the select
+    await page.waitForLoadState('networkidle');
 
     // Select first real account as source (index 0 is placeholder "Select an account…")
     await page.locator('#from-account').selectOption({ index: 1 });

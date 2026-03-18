@@ -52,14 +52,26 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
       - run: npm ci
-      - run: npm run test:api:${{ matrix.domain }}
+      - name: Smoke — ${{ matrix.domain }}
+        run: npm run test:smoke:${{ matrix.domain }}
+        env:
+          DB_PATH: ':memory:'
+      - name: Regression — ${{ matrix.domain }}
+        run: npm run test:regression:${{ matrix.domain }}
+        env:
+          DB_PATH: ':memory:'
+      - name: Negative — ${{ matrix.domain }}
+        run: npm run test:negative:${{ matrix.domain }}
         env:
           DB_PATH: ':memory:'
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: api-results-${{ matrix.domain }}
-          path: results/vitest/api-${{ matrix.domain }}.junit.xml
+          path: |
+            results/vitest/smoke-${{ matrix.domain }}.junit.xml
+            results/vitest/regression-${{ matrix.domain }}.junit.xml
+            results/vitest/negative-${{ matrix.domain }}.junit.xml
 
   security-tests:
     name: Security (OWASP API Top 10)
