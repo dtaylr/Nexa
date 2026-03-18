@@ -158,14 +158,14 @@ test.describe('@smoke @mobile @health Health — navigation', () => {
     await page.goto('/HealthyU/dashboard');
     await page.waitForLoadState('domcontentloaded');
 
-    await expect(page.getByRole('link', { name: /Finance/i })).toBeVisible();
-    await expect(page.getByRole('link', { name: /Health/i })).toBeVisible();
-    await expect(page.getByRole('link', { name: /Shop/i })).toBeVisible();
+    await expect(page.getByRole('link', { name: /BrightBank/i })).toBeVisible();
+    await expect(page.getByRole('link', { name: /HealthyU/i })).toBeVisible();
+    await expect(page.getByRole('link', { name: /BuyItAll/i })).toBeVisible();
   });
 
   test('tapping Finance nav navigates to finance dashboard', async ({ page }) => {
     await page.goto('/HealthyU/dashboard');
-    await page.getByRole('link', { name: /Finance/i }).tap();
+    await page.getByRole('link', { name: /BrightBank/i }).tap();
     await expect(page).toHaveURL(/\/BrightBank\//);
   });
 });
