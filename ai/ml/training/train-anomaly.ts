@@ -40,14 +40,14 @@ const db = new Database(dbPath, { readonly: true });
 
 interface TransferRow {
   amount: number;
-  created_at: string;
-  from_account_id: string;
+  createdAt: string;
+  fromAccountId: string;
 }
 
 const rows = db.prepare(`
-  SELECT t.amount, t.created_at, t.from_account_id
+  SELECT t.amount, t.createdAt, t.fromAccountId
   FROM fin_transfers t
-  ORDER BY t.created_at
+  ORDER BY t.createdAt
 `).all() as TransferRow[];
 
 db.close();
@@ -66,7 +66,7 @@ interface AccountStats {
 }
 
 function accountStats(accountId: string, allRows: TransferRow[], refTime: Date): AccountStats {
-  const acctRows = allRows.filter(r => r.from_account_id === accountId);
+  const acctRows = allRows.filter(r => r.fromAccountId === accountId);
   if (acctRows.length === 0) return { mean: 0, std: 1, recentCount: 0 };
 
   const amounts = acctRows.map(r => r.amount);
@@ -74,7 +74,7 @@ function accountStats(accountId: string, allRows: TransferRow[], refTime: Date):
   const std = Math.sqrt(amounts.reduce((s, v) => s + (v - mean) ** 2, 0) / amounts.length) || 1;
 
   const cutoff = refTime.getTime() - 24 * 60 * 60 * 1000;
-  const recentCount = acctRows.filter(r => new Date(r.created_at).getTime() >= cutoff).length;
+  const recentCount = acctRows.filter(r => new Date(r.createdAt).getTime() >= cutoff).length;
 
   return { mean, std, recentCount };
 }
@@ -82,8 +82,8 @@ function accountStats(accountId: string, allRows: TransferRow[], refTime: Date):
 //  Build feature objects 
 
 function toFeatures(row: TransferRow, allRows: TransferRow[]): TransactionFeatures {
-  const ts = new Date(row.created_at);
-  const stats = accountStats(row.from_account_id, allRows, ts);
+  const ts = new Date(row.createdAt);
+  const stats = accountStats(row.fromAccountId, allRows, ts);
   return {
     amount: row.amount,
     hourOfDay: ts.getUTCHours(),
