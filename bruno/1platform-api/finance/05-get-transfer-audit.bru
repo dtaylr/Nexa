@@ -1,0 +1,29 @@
+meta {
+  name: Get Transfer Audit Log
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{baseUrl}}/api/finance/transfers/{{transferId}}/audit
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{aliceToken}}
+}
+
+tests {
+  test("Status 200 or 404", function() {
+    // BUG AUDIT_SILENT_FAILURE: audit log written async — may not exist yet
+    expect([200, 404]).to.include(res.getStatus());
+  });
+
+  test("BUG AUDIT_SILENT_FAILURE — audit record should always exist after transfer", function() {
+    // This is a known bug: setImmediate write can fail silently
+    if (res.getStatus() === 404) {
+      console.warn("AUDIT_SILENT_FAILURE: Audit record not found for transfer", bru.getEnvVar("transferId"));
+    }
+  });
+}

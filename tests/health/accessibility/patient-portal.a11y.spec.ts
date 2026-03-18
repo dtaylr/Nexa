@@ -5,7 +5,7 @@ import path from 'path';
 
 test.describe('Patient Portal — WCAG 2.1 AA Accessibility', () => {
   test('appointment booking page has zero critical violations', async ({ page }) => {
-    await page.goto('/health/appointments/book');
+    await page.goto('/HealthyU/appointments/book');
 
     const results = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
@@ -26,7 +26,7 @@ test.describe('Patient Portal — WCAG 2.1 AA Accessibility', () => {
   });
 
   test('appointments list meets WCAG 2.1 AA', async ({ page }) => {
-    await page.goto('/health/appointments');
+    await page.goto('/HealthyU/appointments');
 
     const results = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa'])
@@ -36,8 +36,8 @@ test.describe('Patient Portal — WCAG 2.1 AA Accessibility', () => {
     expect(serious, 'Serious or critical violations found').toHaveLength(0);
   });
 
-  test('HLT-004: cancel appointment dialog is keyboard navigable', async ({ page }) => {
-    await page.goto('/health/appointments');
+  test('CANCEL_DIALOG_FOCUS_TRAP: cancel appointment dialog is keyboard navigable', async ({ page }) => {
+    await page.goto('/HealthyU/appointments');
 
     const cancelButton = page.getByRole('button', { name: 'Cancel appointment' }).first();
 
@@ -50,7 +50,7 @@ test.describe('Patient Portal — WCAG 2.1 AA Accessibility', () => {
       const focusedElement = await page.evaluate(() => document.activeElement?.tagName);
       expect(
         ['BUTTON', 'INPUT', 'A'],
-        'Focus should move into the dialog when it opens (HLT-004)'
+        'Focus should move into the dialog when it opens (CANCEL_DIALOG_FOCUS_TRAP)'
       ).toContain(focusedElement);
 
       await page.keyboard.press('Escape');

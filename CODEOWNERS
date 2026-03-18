@@ -1,0 +1,49 @@
+# NexaCore — Code Ownership
+#
+# Controls which teams are requested as reviewers for PRs.
+# Format: <pattern>  <@owner or @team>
+#
+# GitHub resolves these top-to-bottom; the last matching rule wins.
+
+#  Default: platform team reviews everything 
+*                                   @nexacore/platform
+
+#  CI/CD pipelines 
+# All pipeline changes require a senior SDET sign-off.
+# Rationale: pipeline regressions block every engineer.
+.github/workflows/                  @nexacore/sdet-leads
+.github/CODEOWNERS                  @nexacore/sdet-leads
+
+#  K8s / Infrastructure 
+k8s/                                @nexacore/platform @nexacore/sdet-leads
+docker-compose.yml                  @nexacore/platform
+
+#  ML / AI triage 
+ai/                                 @nexacore/ml-quality
+ai/ml/                              @nexacore/ml-quality @nexacore/sdet-leads
+
+#  Test suite 
+tests/                              @nexacore/sdet
+tests/security/                     @nexacore/security @nexacore/sdet-leads
+tests/helpers/                      @nexacore/sdet-leads
+tests/builders/                     @nexacore/sdet
+
+#  API (domain teams own their domain) 
+apps/api/src/finance/               @nexacore/finance-eng @nexacore/sdet
+apps/api/src/health/                @nexacore/health-eng  @nexacore/sdet
+apps/api/src/commerce/              @nexacore/commerce-eng @nexacore/sdet
+apps/api/src/middleware/            @nexacore/platform @nexacore/security
+apps/api/src/auth/                  @nexacore/platform @nexacore/security
+
+#  Frontend 
+apps/web/                           @nexacore/frontend
+apps/web/src/finance/               @nexacore/finance-eng @nexacore/frontend
+apps/web/src/health/                @nexacore/health-eng  @nexacore/frontend
+apps/web/src/commerce/              @nexacore/commerce-eng @nexacore/frontend
+
+#  Database 
+db/                                 @nexacore/platform @nexacore/sdet-leads
+
+#  Documentation 
+docs/                               @nexacore/platform
+README.md                           @nexacore/platform

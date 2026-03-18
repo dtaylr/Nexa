@@ -1,0 +1,17 @@
+.app-nav {
+  flex-wrap: wrap;
+}
+
+.app-main {
+  box-sizing: border-box;
+}
+
+@media (max-width: 600px) {
+  .app-nav {
+    padding: 0.5rem 0.75rem !important;
+    gap: 0.15rem !important;
+  }
+  .app-main {
+    padding: 1rem !important;
+  }
+}

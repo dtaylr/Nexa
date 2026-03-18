@@ -1,0 +1,43 @@
+meta {
+  name: Transfer — Insufficient Funds (negative)
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/api/finance/transfers
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{aliceToken}}
+}
+
+body:json {
+  {
+    "fromAccountId": "acc-alice-current",
+    "toAccountId": "acc-bob-current",
+    "amount": 9999999.00,
+    "currency": "USD"
+  }
+}
+
+tests {
+  test("Status 422 Insufficient Funds", function() {
+    expect(res.getStatus()).to.equal(422);
+  });
+
+  test("Error code is INSUFFICIENT_FUNDS", function() {
+    expect(res.getBody().error).to.equal("INSUFFICIENT_FUNDS");
+  });
+
+  test("Returns availableBalance", function() {
+    expect(res.getBody().availableBalance).to.be.a("number");
+  });
+
+  test("BUG ACCOUNT_ID_DISCLOSURE — accountId must NOT appear in error body", function() {
+    const body = JSON.stringify(res.getBody());
+    expect(body).to.not.include("accountId");
+  });
+}

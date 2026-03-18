@@ -2,10 +2,15 @@ import { Router } from 'express';
 import { getPatient, getPatientRecords, getMyPatient } from './patients';
 import { getAppointments, createAppointment, cancelAppointment } from './appointments';
 import { getMedications } from './medications';
+import { getLabResults, getLabResult, orderLabTest } from './lab-results';
+import { getPrescriptions, requestRenewal } from './prescriptions';
+import { getMessages, sendMessage, markRead } from './messages';
+import { getInsurance, updateInsurance } from './insurance';
+import { getBilling, payBill } from './billing';
+import { triageSymptoms, getNotificationPrefs, updateNotificationPrefs } from './symptom-triage';
 import { authenticate } from '../middleware/auth';
 
 export const healthRouter = Router();
-
 healthRouter.use(authenticate);
 
 healthRouter.get('/patients/me', getMyPatient);
@@ -15,3 +20,18 @@ healthRouter.get('/patients/:id/appointments', getAppointments);
 healthRouter.post('/appointments', createAppointment);
 healthRouter.put('/appointments/:id/cancel', cancelAppointment);
 healthRouter.get('/patients/:id/medications', getMedications);
+healthRouter.get('/patients/:id/lab-results', getLabResults);
+healthRouter.get('/patients/:id/lab-results/:resultId', getLabResult);
+healthRouter.post('/patients/:id/lab-orders', orderLabTest);
+healthRouter.get('/patients/:id/prescriptions', getPrescriptions);
+healthRouter.post('/patients/:id/prescriptions/:prescriptionId/renewal', requestRenewal);
+healthRouter.get('/patients/:id/messages', getMessages);
+healthRouter.post('/patients/:id/messages', sendMessage);
+healthRouter.put('/messages/:messageId/read', markRead);
+healthRouter.get('/patients/:id/insurance', getInsurance);
+healthRouter.put('/patients/:id/insurance', updateInsurance);
+healthRouter.get('/patients/:id/billing', getBilling);
+healthRouter.post('/patients/:id/billing/:billId/pay', payBill);
+healthRouter.post('/symptoms/triage', triageSymptoms);
+healthRouter.get('/patients/:id/notification-prefs', getNotificationPrefs);
+healthRouter.put('/patients/:id/notification-prefs', updateNotificationPrefs);

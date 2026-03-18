@@ -6,6 +6,10 @@ COPY apps/web/package*.json ./apps/web/
 RUN npm ci --workspace=apps/web
 
 COPY apps/web ./apps/web
+
+ARG VITE_API_URL=http://localhost:3001/api
+ENV VITE_API_URL=$VITE_API_URL
+
 RUN npm run build --workspace=apps/web
 
 FROM nginx:alpine

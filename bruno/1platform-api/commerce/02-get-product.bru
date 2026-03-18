@@ -1,0 +1,25 @@
+meta {
+  name: Get Product
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/api/commerce/products/{{productId}}
+  body: none
+  auth: none
+}
+
+tests {
+  test("Status 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Returns product with required fields", function() {
+    const p = res.getBody();
+    expect(p).to.have.property("id");
+    expect(p).to.have.property("name");
+    expect(p).to.have.property("price");
+    expect(p).to.have.property("inventory");
+  });
+}

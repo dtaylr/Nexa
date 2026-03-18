@@ -1,25 +1,24 @@
 import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
 import Database from 'better-sqlite3';
 import { v4 as uuidv4 } from 'uuid';
-import { makeToken, seedUser } from '../../helpers';
-
-let db: Database.Database;
-let app: any;
-let supertest: any;
-
-beforeAll(async () => {
-  const { db: testDb } = await import('../../../apps/api/src/db');
-  db = testDb;
-  const { app: testApp } = await import('../../../apps/api/src/index');
-  app = testApp;
-  supertest = (await import('supertest')).default;
-});
+import { makeToken, seedUser } from '../../helpers/helpers';
 
 describe('Commerce API — Promotions & Inventory', () => {
+  let db: Database.Database;
+  let app: any;
+  let supertest: any;
   let shopperId: number;
   let shopperToken: string;
   let cartId: string;
   let productId: string;
+
+  beforeAll(async () => {
+    const { db: testDb } = await import('../../../apps/api/src/db');
+    db = testDb;
+    const { app: testApp } = await import('../../../apps/api/src/app');
+    app = testApp;
+    supertest = (await import('supertest')).default;
+  });
 
   beforeEach(() => {
     shopperId = seedUser(db, `shopper-${uuidv4()}@test.dev`, 'shopper');
@@ -42,7 +41,7 @@ describe('Commerce API — Promotions & Inventory', () => {
     ).run(uuidv4(), cartId, productId, 1);
   });
 
-  it('COM-001: promotion code cannot be applied more than once to the same cart', async () => {
+  it('PROMO_CODE_STACKING: promotion code cannot be applied more than once to the same cart', async () => {
     const code = `SAVE10-${shopperId}`;
 
     const first = await supertest(app)
@@ -58,12 +57,12 @@ describe('Commerce API — Promotions & Inventory', () => {
       .set('Authorization', `Bearer ${shopperToken}`)
       .send({ cartId, code });
 
-    // BUG COM-001: second application currently returns 200 — stacking allowed
-    expect(second.status, 'Duplicate promo application should be rejected (COM-001)').toBe(409);
+    // BUG PROMO_CODE_STACKING: second application currently returns 200 — stacking allowed
+    expect(second.status, 'Duplicate promo application should be rejected (PROMO_CODE_STACKING)').toBe(409);
     expect(second.body.error).toBe('PROMOTION_ALREADY_APPLIED');
   });
 
-  it('COM-002: concurrent last-item checkout prevents oversell', async () => {
+  it('INVENTORY_OVERSELL_RACE: concurrent last-item checkout prevents oversell', async () => {
     const rareId = 'PROD-RARE-' + uuidv4();
     db.prepare(
       "INSERT INTO com_products (id, name, description, price, inventory) VALUES (?, ?, ?, ?, ?)"
@@ -96,16 +95,16 @@ describe('Commerce API — Promotions & Inventory', () => {
     const succeeded = results.filter(r => r.status === 201);
     const failed = results.filter(r => r.status === 409);
 
-    // BUG COM-002: both may succeed with concurrent requests
-    expect(succeeded.length, 'Exactly one order should succeed (COM-002)').toBe(1);
+    // BUG INVENTORY_OVERSELL_RACE: both may succeed with concurrent requests
+    expect(succeeded.length, 'Exactly one order should succeed (INVENTORY_OVERSELL_RACE)').toBe(1);
     expect(failed.length).toBe(1);
     expect(failed[0].body.error).toBe('OUT_OF_STOCK');
 
     const inventory = (db.prepare('SELECT inventory FROM com_products WHERE id = ?').get(rareId) as any).inventory;
-    expect(inventory, `Inventory went to ${inventory} — should be 0 (COM-002)`).toBe(0);
+    expect(inventory, `Inventory went to ${inventory} — should be 0 (INVENTORY_OVERSELL_RACE)`).toBe(0);
   });
 
-  it('COM-003: order creation should not mark email as sent before payment', async () => {
+  it('EMAIL_BEFORE_PAYMENT: order creation should not mark email as sent before payment', async () => {
     const res = await supertest(app)
       .post('/api/commerce/orders')
       .set('Authorization', `Bearer ${shopperToken}`)
@@ -113,14 +112,14 @@ describe('Commerce API — Promotions & Inventory', () => {
 
     expect(res.status).toBe(201);
 
-    // BUG COM-003: emailQueued is true even before payment is processed
-    expect(res.body.emailQueued, 'Email should not be queued before payment (COM-003)').toBe(false);
+    // BUG EMAIL_BEFORE_PAYMENT: emailQueued is true even before payment is processed
+    expect(res.body.emailQueued, 'Email should not be queued before payment (EMAIL_BEFORE_PAYMENT)').toBe(false);
 
     const order = db.prepare('SELECT emailSent FROM com_orders WHERE id = ?').get(res.body.orderId) as any;
-    expect(order.emailSent, 'emailSent should be 0 before payment (COM-003)').toBe(0);
+    expect(order.emailSent, 'emailSent should be 0 before payment (EMAIL_BEFORE_PAYMENT)').toBe(0);
   });
 
-  it('COM-006: product price must be returned with correct decimal precision', async () => {
+  it('PRICE_FLOAT_PRECISION: product price must be returned with correct decimal precision', async () => {
     const res = await supertest(app).get('/api/commerce/products');
 
     expect(res.status).toBe(200);
@@ -128,7 +127,7 @@ describe('Commerce API — Promotions & Inventory', () => {
     for (const product of res.body.products) {
       const priceStr = product.price.toString();
       const decimal = priceStr.includes('.') ? priceStr.split('.')[1] : '';
-      expect(decimal.length, `Price ${product.price} has too many decimal places (COM-006)`).toBeLessThanOrEqual(2);
+      expect(decimal.length, `Price ${product.price} has too many decimal places (PRICE_FLOAT_PRECISION)`).toBeLessThanOrEqual(2);
     }
   });
 });

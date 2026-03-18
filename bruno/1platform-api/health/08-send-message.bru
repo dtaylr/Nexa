@@ -1,0 +1,33 @@
+meta {
+  name: Send Message
+  type: http
+  seq: 8
+}
+
+post {
+  url: {{baseUrl}}/api/health/patients/{{patientId}}/messages
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{patientToken}}
+}
+
+body:json {
+  {
+    "subject": "Question about my prescription",
+    "body": "I wanted to ask about potential side effects of my new medication.",
+    "recipientId": "dr-chen-001"
+  }
+}
+
+tests {
+  test("Status 201", function() {
+    expect(res.getStatus()).to.equal(201);
+  });
+
+  test("Returns message ID", function() {
+    expect(res.getBody().id).to.be.a("string");
+  });
+}

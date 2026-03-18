@@ -6,28 +6,53 @@ services:
     ports:
       - "3001:3001"
     environment:
-      - NODE_ENV=development
-      - JWT_SECRET=nexacore-dev-secret-change-in-prod
-      - DB_PATH=/data/nexacore.db
+      NODE_ENV: production
+      PORT: 3001
+      JWT_SECRET: ${JWT_SECRET:-local-docker-secret-change-me}
+      DB_PATH: /data/1platform.sqlite
+      CORS_ORIGIN: http://localhost:6173
     volumes:
-      - nexacore-data:/data
+      - db_data:/data
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:3001/health"]
       interval: 10s
       timeout: 5s
-      retries: 3
+      retries: 5
+      start_period: 15s
+    restart: unless-stopped
 
   web:
     build:
       context: .
       dockerfile: apps/web/Dockerfile
+      args:
+        # Passed to Vite at build time — URL the browser will use to reach the API
+        VITE_API_URL: http://localhost:3001/api
     ports:
-      - "3000:3000"
-    environment:
-      - VITE_API_URL=http://localhost:3001
+      - "6173:3000"
     depends_on:
       api:
         condition: service_healthy
+    restart: unless-stopped
+
+  # Seeds the database via the admin reset endpoint.
+  # Run once after first bring-up:   docker compose run --rm seed
+  # Or any time fresh demo data is needed. 
+  seed:
+    image: alpine/curl
+    command: >
+      sh -c "
+        echo 'Waiting for API...' &&
+        until curl -sf http://api:3001/health; do sleep 2; done &&
+        echo 'Seeding...' &&
+        curl -sf -X POST http://api:3001/api/admin/reset &&
+        echo 'Seed complete.'
+      "
+    depends_on:
+      api:
+        condition: service_healthy
+    profiles:
+      - seed
 
 volumes:
-  nexacore-data:
+  db_data:

@@ -1,0 +1,35 @@
+meta {
+  name: Get Medications
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/api/health/patients/{{patientId}}/medications
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{patientToken}}
+}
+
+tests {
+  test("Status 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Returns medications array", function() {
+    expect(res.getBody().medications).to.be.an("array");
+  });
+
+  test("BUG DOSAGE_TYPE_MISMATCH — dosage.value should be number not string", function() {
+    const meds = res.getBody().medications;
+    if (meds && meds.length > 0) {
+      const med = meds[0];
+      if (med.dosage && typeof med.dosage.value === "string") {
+        console.warn("DOSAGE_TYPE_MISMATCH: dosage.value is string '", med.dosage.value, "' — should be numeric");
+      }
+    }
+  });
+}

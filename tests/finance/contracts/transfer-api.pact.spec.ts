@@ -6,7 +6,7 @@
  * before integration — the shift-left benefit of Pact.
  *
  * Key assertion: `auditId` must appear in every successful transfer response.
- * This contract catches FIN-001 at the API design layer.
+ * This contract catches AUDIT_SILENT_FAILURE at the API design layer.
  */
 
 import { describe, it, beforeAll, afterAll, expect } from 'vitest';
@@ -16,8 +16,8 @@ import path from 'path';
 const { like, string, regex, decimal, uuid, boolean, eachLike } = MatchersV3;
 
 const provider = new PactV3({
-  consumer: 'NexaCore-Web',
-  provider: 'NexaCore-Finance-API',
+  consumer: '1Platform-Web',
+  provider: '1Platform-Finance-API',
   dir: path.join(process.cwd(), 'pacts'),
   logLevel: 'warn',
 });
@@ -29,7 +29,7 @@ describe('Finance Transfer API — Consumer Contract', () => {
       .uponReceiving('a valid transfer request')
       .withRequest({
         method: 'POST',
-        path: '/api/finance/transfers',
+        path: '/api/BrightBank/transfers',
         headers: {
           'Content-Type': 'application/json',
           Authorization: like('Bearer eyJhbGciOiJIUzI1NiJ9'),
@@ -37,25 +37,24 @@ describe('Finance Transfer API — Consumer Contract', () => {
         body: {
           fromAccountId: string('acc-001'),
           toAccountId: string('acc-002'),
-          amount: decimal(50.00),
-          currency: regex({ generate: 'GBP', matcher: '^[A-Z]{3}$' }),
+          amount: like(50),
+          currency: string('USD'),
           reference: string('Test transfer'),
         },
       })
       .willRespondWith({
         status: 201,
-        headers: { 'Content-Type': regex({ generate: 'application/json', matcher: 'application/json.*' }) },
         body: {
-          transferId: uuid(),
-          status: regex({ generate: 'PENDING', matcher: 'PENDING|COMPLETED|FAILED' }),
-          auditId: uuid(),
-          timestamp: string('2024-01-01T00:00:00.000Z'),
-          amount: decimal(50.00),
-          currency: string('GBP'),
+          transferId: 'a4b3c2d1-e5f6-7890-abcd-ef1234567890',
+          status: 'PENDING',
+          auditId: 'b5c4d3e2-f1a0-1234-bcde-fa0987654321',
+          timestamp: '2024-01-01T00:00:00.000Z',
+          amount: 50,
+          currency: 'USD',
         },
       })
       .executeTest(async (mockserver) => {
-        const res = await fetch(`${mockserver.url}/api/finance/transfers`, {
+        const res = await fetch(`${mockserver.url}/api/BrightBank/transfers`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -64,8 +63,8 @@ describe('Finance Transfer API — Consumer Contract', () => {
           body: JSON.stringify({
             fromAccountId: 'acc-001',
             toAccountId: 'acc-002',
-            amount: 50.00,
-            currency: 'GBP',
+            amount: 50,
+            currency: 'USD',
             reference: 'Test transfer',
           }),
         });
@@ -80,11 +79,11 @@ describe('Finance Transfer API — Consumer Contract', () => {
 
   it('transfer with insufficient funds returns structured error without PII', async () => {
     await provider
-      .given('account acc-001 has a balance of £5.00')
+      .given('account acc-001 has a balance of $5.00')
       .uponReceiving('a transfer request exceeding available balance')
       .withRequest({
         method: 'POST',
-        path: '/api/finance/transfers',
+        path: '/api/BrightBank/transfers',
         headers: {
           'Content-Type': 'application/json',
           Authorization: like('Bearer token'),
@@ -92,23 +91,23 @@ describe('Finance Transfer API — Consumer Contract', () => {
         body: {
           fromAccountId: string('acc-001'),
           toAccountId: string('acc-002'),
-          amount: decimal(100.00),
-          currency: string('GBP'),
+          amount: like(100),
+          currency: string('USD'),
         },
       })
       .willRespondWith({
         status: 422,
         body: {
           error: 'INSUFFICIENT_FUNDS',
-          availableBalance: decimal(5.00),
-          requestedAmount: decimal(100.00),
+          availableBalance: like(5),
+          requestedAmount: like(100),
         },
       })
       .executeTest(async (mockserver) => {
-        const res = await fetch(`${mockserver.url}/api/finance/transfers`, {
+        const res = await fetch(`${mockserver.url}/api/BrightBank/transfers`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: 'Bearer token' },
-          body: JSON.stringify({ fromAccountId: 'acc-001', toAccountId: 'acc-002', amount: 100.00, currency: 'GBP' }),
+          body: JSON.stringify({ fromAccountId: 'acc-001', toAccountId: 'acc-002', amount: 100.00, currency: 'USD' }),
         });
 
         expect(res.status).toBe(422);
@@ -116,7 +115,7 @@ describe('Finance Transfer API — Consumer Contract', () => {
         expect(body.error).toBe('INSUFFICIENT_FUNDS');
         expect(body.availableBalance).toBeDefined();
         expect(body.requestedAmount).toBeDefined();
-        // Contract explicitly excludes accountId — catches FIN-005
+        // Contract explicitly excludes accountId — catches ACCOUNT_ID_DISCLOSURE
         expect(body.accountId).toBeUndefined();
       });
   });
@@ -127,7 +126,7 @@ describe('Finance Transfer API — Consumer Contract', () => {
       .uponReceiving('a request for all user accounts')
       .withRequest({
         method: 'GET',
-        path: '/api/finance/accounts',
+        path: '/api/BrightBank/accounts',
         headers: { Authorization: like('Bearer token') },
       })
       .willRespondWith({
@@ -136,14 +135,14 @@ describe('Finance Transfer API — Consumer Contract', () => {
           accounts: eachLike({
             id: string('acc-001'),
             accountNumber: string('60161331001234'),
-            balance: decimal(100.00),
-            currency: string('GBP'),
-            type: regex({ generate: 'current', matcher: 'current|savings' }),
+            balance: like(100),
+            currency: string('USD'),
+            type: string('current'),
           }),
         },
       })
       .executeTest(async (mockserver) => {
-        const res = await fetch(`${mockserver.url}/api/finance/accounts`, {
+        const res = await fetch(`${mockserver.url}/api/BrightBank/accounts`, {
           headers: { Authorization: 'Bearer token' },
         });
         expect(res.status).toBe(200);

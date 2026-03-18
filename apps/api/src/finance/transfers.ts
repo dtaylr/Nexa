@@ -4,14 +4,22 @@ import { db } from '../db';
 import { AuthRequest } from '../middleware/auth';
 
 export function createTransfer(req: AuthRequest, res: Response) {
-  const { fromAccountId, toAccountId, amount, currency = 'GBP', reference } = req.body;
+  const { fromAccountId, toAccountId, amount, currency = 'USD', reference } = req.body;
 
   if (!fromAccountId || !toAccountId || !amount) {
     return res.status(400).json({ error: 'fromAccountId, toAccountId, and amount are required' });
   }
 
-  const amountInPence = Math.round(amount * 100);
-  if (amountInPence <= 0) {
+  if (fromAccountId === toAccountId) {
+    return res.status(400).json({ error: 'Source and destination accounts must be different' });
+  }
+
+  if (typeof amount !== 'number' || !isFinite(amount)) {
+    return res.status(400).json({ error: 'Amount must be a number' });
+  }
+
+  const amountInCents = Math.round(amount * 100);
+  if (amountInCents <= 0) {
     return res.status(400).json({ error: 'Amount must be positive' });
   }
 
@@ -29,9 +37,9 @@ export function createTransfer(req: AuthRequest, res: Response) {
     return res.status(404).json({ error: 'Destination account not found' });
   }
 
-  // BUG FIN-004: balance check and debit are not wrapped in a transaction.
+  // BUG BALANCE_RACE_CONDITION: balance check and debit are not wrapped in a transaction.
   // Two concurrent requests can both pass this check before either updates the balance.
-  if (fromAccount.balance < amountInPence) {
+  if (fromAccount.balance < amountInCents) {
     return res.status(422).json({
       error: 'INSUFFICIENT_FUNDS',
       availableBalance: fromAccount.balance / 100,
@@ -42,22 +50,22 @@ export function createTransfer(req: AuthRequest, res: Response) {
   const transferId = uuidv4();
   const auditId = uuidv4();
 
-  db.prepare('UPDATE fin_accounts SET balance = balance - ? WHERE id = ?').run(amountInPence, fromAccountId);
-  db.prepare('UPDATE fin_accounts SET balance = balance + ? WHERE id = ?').run(amountInPence, toAccountId);
+  db.prepare('UPDATE fin_accounts SET balance = balance - ? WHERE id = ?').run(amountInCents, fromAccountId);
+  db.prepare('UPDATE fin_accounts SET balance = balance + ? WHERE id = ?').run(amountInCents, toAccountId);
 
   db.prepare(`
     INSERT INTO fin_transfers (id, fromAccountId, toAccountId, amount, currency, reference, status, auditId)
     VALUES (?, ?, ?, ?, ?, ?, 'PENDING', ?)
-  `).run(transferId, fromAccountId, toAccountId, amountInPence, currency, reference, auditId);
+  `).run(transferId, fromAccountId, toAccountId, amountInCents, currency, reference, auditId);
 
-  // BUG FIN-001: audit log is written asynchronously and can silently fail under load.
+  // BUG AUDIT_SILENT_FAILURE: audit log is written asynchronously and can silently fail under load.
   // The auditId is already returned in the response, but the record may never be written.
   setImmediate(() => {
     try {
       db.prepare(`
         INSERT INTO fin_audit_log (id, transferId, action, metadata)
         VALUES (?, ?, 'TRANSFER_CREATED', ?)
-      `).run(uuidv4(), transferId, JSON.stringify({ amountInPence, currency, reference }));
+      `).run(uuidv4(), transferId, JSON.stringify({ amountInCents, currency, reference }));
     } catch {
       // swallowed — no retry, no alert
     }

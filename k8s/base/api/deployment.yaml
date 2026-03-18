@@ -1,0 +1,156 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: 1platform-api
+  namespace: 1platform
+  labels:
+    app.kubernetes.io/name: 1platform-api
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: 1platform
+  annotations:
+    # Enables kubectl rollout undo if post-deploy smoke tests fail
+    kubernetes.io/change-cause: "manual-deploy"
+spec:
+  replicas: 2
+  revisionHistoryLimit: 5
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: 1platform-api
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0    #new pod must be Ready before old is removed to reduce downtime
+
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: 1platform-api
+        app.kubernetes.io/component: backend
+        app.kubernetes.io/version: latest
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/metrics"
+        prometheus.io/port: "3001"
+
+    spec:
+      serviceAccountName: 1platform-api
+      automountServiceAccountToken: false
+
+      # Spread pods across nodes and zones for HA
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: 1platform-api
+
+      affinity:
+        podAntiAffinity:
+          # Soft preference: try to spread across AZs
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: 1platform-api
+                topologyKey: topology.kubernetes.io/zone
+
+      # Pod-level security restricted to non-root and no privilege escalation
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+        seccompProfile:
+          type: RuntimeDefault
+
+      containers:
+        - name: api
+          image: ghcr.io/1platform/1platform-api:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 3001
+              protocol: TCP
+
+          env:
+            - name: PORT
+              value: "3001"
+            - name: NODE_ENV
+              valueFrom:
+                configMapKeyRef:
+                  name: 1platform-config
+                  key: NODE_ENV
+            - name: CORS_ORIGIN
+              valueFrom:
+                configMapKeyRef:
+                  name: 1platform-config
+                  key: CORS_ORIGIN
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: 1platform-secrets
+                  key: jwt-secret
+            - name: DB_PATH
+              value: /data/1platform.db
+
+          volumeMounts:
+            - name: db-storage
+              mountPath: /data
+            - name: tmp
+              mountPath: /tmp
+
+          # Conservative requests; burst via limits
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+
+        #30s for Node to boot before readiness checks begin
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            failureThreshold: 6
+            periodSeconds: 5
+
+          # Readiness: stop routing traffic if the process is unhealthy
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+            successThreshold: 1
+
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          # Container-level: read-only root FS, no capabilities
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+
+      volumes:
+        - name: db-storage
+          persistentVolumeClaim:
+            claimName: 1platform-db-pvc
+        - name: tmp
+          emptyDir: {}
+
+      terminationGracePeriodSeconds: 30

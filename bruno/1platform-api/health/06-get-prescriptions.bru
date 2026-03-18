@@ -1,0 +1,25 @@
+meta {
+  name: Get Prescriptions
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{baseUrl}}/api/health/patients/{{patientId}}/prescriptions
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{patientToken}}
+}
+
+tests {
+  test("Status 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Returns prescriptions array", function() {
+    expect(res.getBody().prescriptions).to.be.an("array");
+  });
+}
