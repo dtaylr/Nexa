@@ -91,7 +91,16 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
       - run: npm ci
-      - run: npm run test:api:${{ matrix.domain }} -- --reporter=verbose --coverage
+      - name: Smoke — ${{ matrix.domain }}
+        run: npm run test:smoke:${{ matrix.domain }}
+        env:
+          DB_PATH: ':memory:'
+      - name: Regression — ${{ matrix.domain }}
+        run: npm run test:regression:${{ matrix.domain }} -- --coverage
+        env:
+          DB_PATH: ':memory:'
+      - name: Negative — ${{ matrix.domain }}
+        run: npm run test:negative:${{ matrix.domain }}
         env:
           DB_PATH: ':memory:'
       - name: Coverage gate — 80% minimum

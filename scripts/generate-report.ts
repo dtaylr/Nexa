@@ -194,8 +194,6 @@ function buildAiSuggestions(failed: NormalizedTest[]): ReportData['aiSuggestions
   return suggestions;
 }
 
-//  Parsers 
-
 function parseVitest(raw: unknown): NormalizedTest[] {
   const report = raw as VitestReport;
   const results: NormalizedTest[] = [];
