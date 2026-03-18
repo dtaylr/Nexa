@@ -52,7 +52,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
       - run: npm ci
-      - run: npm run test:api:${{ matrix.domain }} -- --reporter=junit --outputFile=results/api/${{ matrix.domain }}/junit.xml
+      - run: mkdir -p results/api/${{ matrix.domain }} && npm run test:api:${{ matrix.domain }} -- --outputFile.junit=results/api/${{ matrix.domain }}/junit.xml
         env:
           DB_PATH: ':memory:'
       - uses: actions/upload-artifact@v4
@@ -72,7 +72,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
       - run: npm ci
-      - run: npm run test:security -- --reporter=verbose --reporter=junit --outputFile=results/security/junit.xml
+      - run: mkdir -p results/security && npm run test:security -- --outputFile.junit=results/security/junit.xml
         env:
           DB_PATH: ':memory:'
       - uses: actions/upload-artifact@v4

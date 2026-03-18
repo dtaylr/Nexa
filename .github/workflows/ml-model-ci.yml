@@ -55,7 +55,7 @@ jobs:
       - run: npm ci
 
       - name: Seed database
-        run: npm run seed
+        run: mkdir -p data && npm run seed
         env:
           DB_PATH: data/1platform.db
 
@@ -134,6 +134,7 @@ jobs:
 
       - name: Write model card
         run: |
+          mkdir -p artifacts
           cat > artifacts/model-card.md <<EOF
           # 1Platform ML Model Card
 
