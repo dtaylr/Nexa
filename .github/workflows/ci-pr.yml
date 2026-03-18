@@ -143,6 +143,9 @@ jobs:
     needs: [lint, contracts, api-tests, security, ml-smoke, k8s-lint]
     if: always()
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      issues: write
     steps:
       - uses: actions/github-script@v7
         with:
