@@ -1,0 +1,29 @@
+meta {
+  name: Cancel Appointment
+  type: http
+  seq: 14
+}
+
+put {
+  url: {{baseUrl}}/api/health/appointments/{{appointmentId}}/cancel
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{patientToken}}
+}
+
+vars:pre-request {
+  appointmentId: replace-with-a-real-appointment-id
+}
+
+tests {
+  test("Status 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Returns cancelled confirmation", function() {
+    expect(res.getBody().cancelled).to.equal(true);
+  });
+}

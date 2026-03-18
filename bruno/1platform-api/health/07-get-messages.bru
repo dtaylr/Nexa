@@ -1,0 +1,35 @@
+meta {
+  name: Get Patient Messages
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{baseUrl}}/api/health/patients/{{patientId}}/messages
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{patientToken}}
+}
+
+tests {
+  test("Status 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Returns messages array", function() {
+    expect(res.getBody().messages).to.be.an("array");
+  });
+
+  test("Message fields present", function() {
+    const messages = res.getBody().messages;
+    if (messages && messages.length > 0) {
+      const msg = messages[0];
+      expect(msg).to.have.property("id");
+      expect(msg).to.have.property("subject");
+      expect(msg).to.have.property("body");
+    }
+  });
+}

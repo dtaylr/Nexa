@@ -1,0 +1,21 @@
+meta {
+  name: Get Account Statement
+  type: http
+  seq: 8
+}
+
+get {
+  url: {{baseUrl}}/api/finance/accounts/{{accountId}}/statement
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{aliceToken}}
+}
+
+tests {
+  test("Status 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+}

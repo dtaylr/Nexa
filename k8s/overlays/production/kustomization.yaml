@@ -1,0 +1,73 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: 1platform-production
+
+resources:
+  - ../../base
+
+patches:
+  # Production: 3 replicas per service
+  - patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 3
+    target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: 1platform-api
+
+  - patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 3
+    target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: 1platform-web
+
+  # Production: tighter HPA bounds
+  - patch: |-
+      - op: replace
+        path: /spec/minReplicas
+        value: 3
+      - op: replace
+        path: /spec/maxReplicas
+        value: 20
+    target:
+      group: autoscaling
+      version: v2
+      kind: HorizontalPodAutoscaler
+      name: 1platform-api
+
+  # Production ConfigMap
+  - patch: |-
+      - op: replace
+        path: /data/NODE_ENV
+        value: production
+      - op: replace
+        path: /data/CORS_ORIGIN
+        value: https://app.1platform.com
+    target:
+      version: v1
+      kind: ConfigMap
+      name: 1platform-config
+
+  # Production: PDB requires 2 always available
+  - patch: |-
+      - op: replace
+        path: /spec/minAvailable
+        value: 2
+    target:
+      group: policy
+      version: v1
+      kind: PodDisruptionBudget
+      name: 1platform-api
+
+images:
+  - name: ghcr.io/1platform/1platform-api
+    newTag: "$IMAGE_TAG"
+  - name: ghcr.io/1platform/1platform-web
+    newTag: "$IMAGE_TAG"

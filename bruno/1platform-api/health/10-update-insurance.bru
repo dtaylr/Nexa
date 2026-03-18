@@ -1,0 +1,41 @@
+meta {
+  name: Update Insurance
+  type: http
+  seq: 10
+}
+
+put {
+  url: {{baseUrl}}/api/health/patients/{{patientId}}/insurance
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{patientToken}}
+}
+
+body:json {
+  {
+    "provider": "NexaCare Health",
+    "policyNumber": "POL-2026-88421",
+    "groupNumber": "GRP-5501",
+    "memberName": "Alice Johnson",
+    "effectiveDate": "2026-01-01",
+    "expirationDate": "2026-12-31",
+    "copay": 25
+  }
+}
+
+tests {
+  test("Status 200 or 201", function() {
+    expect([200, 201]).to.include(res.getStatus());
+  });
+
+  // BUG PATIENT_PII_DISCLOSURE: patientId echoed in 400 error response.
+  // Trigger by sending a bad body (remove required fields) and check the 400 body.
+  test("400 missing fields — check for PATIENT_PII_DISCLOSURE PII leak", function() {
+    // This test is informational — run the negative variant to reproduce PATIENT_PII_DISCLOSURE.
+    // A 400 response from PUT /patients/:id/insurance leaks the :id param in the body.
+    console.log("PATIENT_PII_DISCLOSURE: send a bad request to this endpoint to see patientId in error response.");
+  });
+}

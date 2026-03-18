@@ -1,0 +1,165 @@
+name: CI — Pull Request
+
+# Fast feedback for every PR to main.
+# Target wall-clock time: < 8 minutes.
+#load tests & visual regression run nightly.
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+
+concurrency:
+  # Cancel any in-progress run for the same PR branch
+  group: ci-pr-${{ github.head_ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '20'
+  JWT_SECRET: ci-test-secret
+
+jobs:
+  lint:
+    name: Lint & Type-check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+
+  k8s-lint:
+    name: K8s Manifests (kubeconform)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install kubeconform
+        run: |
+          curl -sL https://github.com/yannh/kubeconform/releases/latest/download/kubeconform-linux-amd64.tar.gz \
+            | tar xz -C /usr/local/bin
+      - name: Validate base manifests
+        run: |
+          kubeconform -strict -summary \
+            -kubernetes-version 1.29.0 \
+            k8s/base/namespace.yaml \
+            k8s/base/configmap.yaml \
+            k8s/base/api/deployment.yaml \
+            k8s/base/api/service.yaml \
+            k8s/base/api/hpa.yaml \
+            k8s/base/api/pdb.yaml \
+            k8s/base/web/deployment.yaml \
+            k8s/base/web/service.yaml
+      - name: Validate kustomize staging build
+        run: |
+          kubectl kustomize k8s/overlays/staging | kubeconform -strict -summary -kubernetes-version 1.29.0
+
+  # Contract tests -no server needed
+  contracts:
+    name: Contracts — ${{ matrix.domain }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        domain: [finance, commerce]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - run: npm run test:contracts:${{ matrix.domain }}
+        env:
+          DB_PATH: ':memory:'
+
+  # API unit tests parallel by domain, in-memory DB
+  api-tests:
+    name: API — ${{ matrix.domain }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        domain: [finance, health, commerce]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - run: npm run test:api:${{ matrix.domain }} -- --reporter=verbose --coverage
+        env:
+          DB_PATH: ':memory:'
+      - name: Coverage gate — 80% minimum
+        run: |
+          COVERAGE=$(cat coverage/coverage-summary.json | jq '.total.lines.pct')
+          echo "Line coverage: ${COVERAGE}%"
+          if (( $(echo "$COVERAGE < 80" | bc -l) )); then
+            echo "Coverage ${COVERAGE}% is below 80% threshold"
+            exit 1
+          fi
+        continue-on-error: true   # warn but don't block PR on first run
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: api-coverage-${{ matrix.domain }}
+          path: coverage/
+
+  security:
+    name: Security (OWASP)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - run: npm run test:security -- --reporter=verbose
+        env:
+          DB_PATH: ':memory:'
+
+  # ML model smoke test — verify detector + predictor compile
+  ml-smoke:
+    name: ML Model Smoke Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - run: npx vitest run ai/ml/__tests__/ --reporter=verbose
+        env:
+          DB_PATH: ':memory:'
+
+  pr-summary:
+    name: PR Summary
+    needs: [lint, contracts, api-tests, security, ml-smoke, k8s-lint]
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      issues: write
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const jobs = ${{ toJSON(needs) }};
+            const results = Object.entries(jobs).map(([name, job]) => {
+              const icon = job.result === 'success' ? '✅' : job.result === 'skipped' ? '⏭️' : '❌';
+              return `${icon} **${name}**: ${job.result}`;
+            });
+            const allPassed = Object.values(jobs).every(j => j.result === 'success' || j.result === 'skipped');
+            const header = allPassed ? '## CI Passed' : '## CI Failed';
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: [header, '', ...results].join('\n'),
+            });

@@ -27,7 +27,7 @@ export function createAppointment(req: AuthRequest, res: Response) {
   const patient = db.prepare('SELECT id FROM hlt_patients WHERE id = ?').get(patientId) as any;
   if (!patient) return res.status(404).json({ error: 'Patient not found' });
 
-  // BUG HLT-003: no check for conflicting appointments at the same datetime.
+  // BUG APPOINTMENT_DOUBLE_BOOKING: no check for conflicting appointments at the same datetime.
   // Two concurrent requests with the same slot both succeed — double-booking is possible.
   const id = uuidv4();
   db.prepare(`

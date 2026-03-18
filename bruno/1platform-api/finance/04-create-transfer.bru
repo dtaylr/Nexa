@@ -1,0 +1,45 @@
+meta {
+  name: Create Transfer
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/api/finance/transfers
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{aliceToken}}
+}
+
+body:json {
+  {
+    "fromAccountId": "acc-alice-current",
+    "toAccountId": "acc-bob-current",
+    "amount": 10.00,
+    "currency": "USD",
+    "reference": "Bruno test transfer"
+  }
+}
+
+tests {
+  test("Status 201", function() {
+    expect(res.getStatus()).to.equal(201);
+  });
+
+  test("Returns transferId", function() {
+    const body = res.getBody();
+    expect(body.transferId).to.be.a("string");
+    bru.setEnvVar("transferId", body.transferId);
+  });
+
+  test("Returns auditId", function() {
+    expect(res.getBody().auditId).to.be.a("string");
+  });
+
+  test("Status is PENDING", function() {
+    expect(res.getBody().status).to.equal("PENDING");
+  });
+}

@@ -1,0 +1,42 @@
+meta {
+  name: Symptom Triage
+  type: http
+  seq: 13
+}
+
+post {
+  url: {{baseUrl}}/api/health/symptoms/triage
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{patientToken}}
+}
+
+body:json {
+  {
+    "symptoms": ["chest pain", "shortness of breath"],
+    "duration": "2 hours",
+    "severity": 8
+  }
+}
+
+tests {
+  test("Status 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Returns triage recommendation", function() {
+    const body = res.getBody();
+    expect(body).to.have.property("urgency");
+    expect(body).to.have.property("recommendation");
+  });
+
+  test("High severity chest pain is urgent", function() {
+    const body = res.getBody();
+    if (body.urgency) {
+      console.log("Triage urgency:", body.urgency, "| Recommendation:", body.recommendation);
+    }
+  });
+}

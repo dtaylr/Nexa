@@ -1,0 +1,72 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: 1platform-staging
+
+resources:
+  - ../../base
+
+namePrefix: staging-
+
+patches:
+  # Staging: single replica each, lower resource limits
+  - patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 1
+    target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: 1platform-api
+
+  - patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 1
+    target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: 1platform-web
+
+  # Staging: HPA min = 1
+  - patch: |-
+      - op: replace
+        path: /spec/minReplicas
+        value: 1
+    target:
+      group: autoscaling
+      version: v2
+      kind: HorizontalPodAutoscaler
+      name: 1platform-api
+
+  # Staging: override ConfigMap values
+  - patch: |-
+      - op: replace
+        path: /data/NODE_ENV
+        value: staging
+      - op: replace
+        path: /data/CORS_ORIGIN
+        value: https://staging.1platform.internal
+    target:
+      version: v1
+      kind: ConfigMap
+      name: 1platform-config
+
+  # Staging ingress host
+  - patch: |-
+      - op: replace
+        path: /spec/rules/0/host
+        value: staging.1platform.internal
+    target:
+      group: networking.k8s.io
+      version: v1
+      kind: Ingress
+      name: 1platform
+
+images:
+  - name: ghcr.io/1platform/1platform-api
+    newTag: staging
+  - name: ghcr.io/1platform/1platform-web
+    newTag: staging

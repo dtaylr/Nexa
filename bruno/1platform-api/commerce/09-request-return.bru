@@ -1,0 +1,37 @@
+meta {
+  name: Request Return
+  type: http
+  seq: 9
+}
+
+post {
+  url: {{baseUrl}}/api/commerce/orders/{{orderId}}/returns
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{shopperToken}}
+}
+
+body:json {
+  {
+    "reason": "Item not as described",
+    "items": [
+      {
+        "productId": "{{productId}}",
+        "quantity": 1
+      }
+    ]
+  }
+}
+
+tests {
+  test("Status 201", function() {
+    expect(res.getStatus()).to.equal(201);
+  });
+
+  test("Returns return ID", function() {
+    expect(res.getBody().returnId).to.be.a("string");
+  });
+}

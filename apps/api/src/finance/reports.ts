@@ -20,7 +20,7 @@ export function getMonthlySummary(req: AuthRequest, res: Response) {
     ORDER BY createdAt DESC
   `).all(...accountIds, ...accountIds) as any[];
 
-  // BUG FIN-002: plain JS floating-point addition — 0.1 + 0.2 = 0.30000000000000004
+  // BUG SUMMARY_FLOAT_DRIFT: plain JS floating-point addition — 0.1 + 0.2 = 0.30000000000000004
   let totalIn = 0;
   let totalOut = 0;
 

@@ -1,0 +1,29 @@
+meta {
+  name: Get Billing
+  type: http
+  seq: 11
+}
+
+get {
+  url: {{baseUrl}}/api/health/patients/{{patientId}}/billing
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{patientToken}}
+}
+
+tests {
+  test("Status 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Returns bills array", function() {
+    expect(res.getBody().bills).to.be.an("array");
+  });
+
+  test("Returns outstanding balance", function() {
+    expect(typeof res.getBody().outstanding).to.equal("number");
+  });
+}

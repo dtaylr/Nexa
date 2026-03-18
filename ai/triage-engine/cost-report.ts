@@ -8,8 +8,7 @@ interface RunRecord {
   durationMs: number;
 }
 
-// GitHub Actions free tier: 2000 min/month for public repos = £0
-// Compute cost estimate based on runner minutes (ubuntu-latest ≈ £0.008/min)
+// Compute cost estimate based on runner minutes (ubuntu-latest ≈ $0.008/min)
 const COST_PER_RUNNER_MINUTE = 0.008;
 
 function estimateCost(durationMs: number, parallelRunners: number): number {
@@ -40,13 +39,13 @@ function report() {
   const costPerDefect = totalDefects > 0 ? totalCost / totalDefects : 0;
 
   console.log('\n═══════════════════════════════════════════════════');
-  console.log('  NexaCore — CI Cost Report');
+  console.log('  1Platform — CI Cost Report');
   console.log(`  Month: ${thisMonth}`);
   console.log('═══════════════════════════════════════════════════\n');
   console.log(`  Total runs this month : ${totalRuns}`);
   console.log(`  Defects caught        : ${totalDefects}`);
-  console.log(`  Estimated CI cost     : £${totalCost.toFixed(2)}`);
-  console.log(`  Cost per defect       : £${costPerDefect.toFixed(2)}`);
+  console.log(`  Estimated CI cost     : $${totalCost.toFixed(2)}`);
+  console.log(`  Cost per defect       : $${costPerDefect.toFixed(2)}`);
   console.log('\n  Note: GitHub Actions public repo = free tier (2000 min/month)');
   console.log('  Costs above are estimates for private repo billing reference.\n');
 
@@ -56,8 +55,8 @@ function report() {
     month: thisMonth,
     totalRuns,
     totalDefects,
-    estimatedCostGBP: parseFloat(totalCost.toFixed(2)),
-    costPerDefectGBP: parseFloat(costPerDefect.toFixed(2)),
+    estimatedCostUSD: parseFloat(totalCost.toFixed(2)),
+    costPerDefectUSD: parseFloat(costPerDefect.toFixed(2)),
   }, null, 2));
 }
 

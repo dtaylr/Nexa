@@ -1,0 +1,25 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: 1platform
+
+resources:
+  - namespace.yaml
+  - configmap.yaml
+  - network-policy.yaml
+  - api/deployment.yaml
+  - api/service.yaml
+  - api/hpa.yaml
+  - api/pdb.yaml
+  - web/deployment.yaml
+  - web/service.yaml
+  - ingress.yaml
+
+commonLabels:
+  app.kubernetes.io/managed-by: kustomize
+
+images:
+  - name: ghcr.io/1platform/1platform-api
+    newTag: latest
+  - name: ghcr.io/1platform/1platform-web
+    newTag: latest
