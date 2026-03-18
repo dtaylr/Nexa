@@ -23,8 +23,8 @@ test.describe('Finance — Transfer Flow', () => {
   });
 
   test('transfer flow shows confirmation with audit reference', async ({ page }) => {
-    // Wait for the first real account option to appear (index 1, after the placeholder)
-    await page.waitForSelector('#from-account option:nth-child(2)');
+    // networkidle in beforeEach guarantees the accounts fetch completed and React re-rendered.
+    // selectOption waits for the <select> to be actionable; options are populated at this point.
 
     // Select first real account as source (index 0 is placeholder "Select an account…")
     await page.locator('#from-account').selectOption({ index: 1 });
