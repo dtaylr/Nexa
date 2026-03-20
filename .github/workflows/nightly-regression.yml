@@ -292,29 +292,36 @@ jobs:
           name: lighthouse-reports
           path: results/lighthouse/
 
-  # Load Tests — k6 (nightly + manual only, not on PRs)
+  # Load Tests — k6 (nightly + manual only; on PRs the job runs empty and succeeds)
   load-tests:
     name: Load — ${{ matrix.domain }}
     runs-on: ubuntu-latest
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     strategy:
       matrix:
         domain: [finance, commerce]
       fail-fast: false
     steps:
+      - name: Skip on PR
+        if: github.event_name == 'pull_request'
+        run: echo "Load tests only run on schedule/dispatch — skipping"
       - uses: actions/checkout@v4
+        if: github.event_name != 'pull_request'
       - uses: actions/setup-node@v4
+        if: github.event_name != 'pull_request'
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
       - run: npm ci
+        if: github.event_name != 'pull_request'
       - name: Install k6
+        if: github.event_name != 'pull_request'
         run: |
           curl -fsSL https://dl.k6.io/key.gpg | sudo gpg --dearmor -o /usr/share/keyrings/k6-archive-keyring.gpg
           echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
           sudo apt-get update -qq
           sudo apt-get install -y k6
       - name: Prepare and start API
+        if: github.event_name != 'pull_request'
         run: |
           mkdir -p artifacts
           npm run seed
@@ -322,9 +329,10 @@ jobs:
           npx wait-on http://localhost:3001/health --timeout 30000
         continue-on-error: true
       - run: npm run test:load:${{ matrix.domain }}
+        if: github.event_name != 'pull_request'
         continue-on-error: true
       - uses: actions/upload-artifact@v4
-        if: always()
+        if: always() && github.event_name != 'pull_request'
         with:
           name: k6-results-${{ matrix.domain }}
           path: artifacts/k6-${{ matrix.domain }}-summary.json
