@@ -307,16 +307,14 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
-      - name: Install k6
-        run: |
-          curl -L https://github.com/grafana/k6/releases/download/v0.49.0/k6-v0.49.0-linux-amd64.tar.gz | tar xvz --strip-components 1
-          sudo mv k6 /usr/local/bin/
+      - uses: grafana/setup-k6-action@v1
       - run: npm ci
       - name: Seed and start API
         run: |
+          mkdir -p artifacts
           npm run seed
           npm run dev:api &
-          npx wait-on http://localhost:3001/health --timeout 20000
+          npx wait-on http://localhost:3001/health --timeout 30000
       - run: npm run test:load:${{ matrix.domain }}
         continue-on-error: true
       - uses: actions/upload-artifact@v4
