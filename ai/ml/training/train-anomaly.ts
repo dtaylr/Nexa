@@ -102,9 +102,6 @@ const globalStd = Math.sqrt(amounts.reduce((s, v) => s + (v - globalMean) ** 2, 
 const labelled = rows.map(row => {
   const features = toFeatures(row, rows);
   // Use global z-score so anomalies are labelled relative to the whole dataset,
-  // not a single account's history (which can be unreliable with few data points).
-  // Threshold 1.5σ captures the large salary inflows (~1.96σ) while leaving
-  // routine payments well below the boundary.
   const globalZScore = (row.amount - globalMean) / (globalStd || 1);
   const label: boolean =
     globalZScore > 1.5 ||
@@ -134,7 +131,7 @@ console.log(`Training on ${trainSet.length} samples (${anomalousSplit.train.leng
 const detector = new AnomalyDetector();
 detector.fit(trainSet);
 
-//  Evaluate 
+//  Eval
 
 let tp = 0, fp = 0, fn = 0, tn = 0;
 for (const { features, label } of testSet) {
