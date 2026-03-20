@@ -44,14 +44,14 @@ export function resetAndReseed(_req: Request, res: Response) {
     const shopId = insertUser('shopper@1platform.dev', pw, 'shopper');
 
     const aliceCurrentId = uuidv4(), aliceSavingsId = uuidv4(), aliceIsaId = uuidv4();
-    const bobCurrentId = uuidv4(), nexaHouseId = uuidv4();
+    const bobCurrentId = uuidv4(), onePlatformHouseId = uuidv4();
 
     const acctInsert = db.prepare(`INSERT INTO fin_accounts (id,userId,accountNumber,balance,currency,type) VALUES (?,?,?,?,?,?)`);
     acctInsert.run(aliceCurrentId, aliceId, '60161331001234', 1_000_000 + rnd(0, 50000), 'USD', 'current');
     acctInsert.run(aliceSavingsId, aliceId, '60161331005678', 5_000_000 + rnd(0, 200000), 'USD', 'savings');
     acctInsert.run(aliceIsaId, aliceId, '60161331007890', 2_000_000 + rnd(0, 100000), 'USD', 'isa');
     acctInsert.run(bobCurrentId, bobId, '60161331009012', 250_000 + rnd(0, 20000), 'USD', 'current');
-    acctInsert.run(nexaHouseId, bobId, '60161331003456', 10_000 + rnd(0, 5000), 'USD', 'current');
+    acctInsert.run(onePlatformHouseId, bobId, '60161331003456', 10_000 + rnd(0, 5000), 'USD', 'current');
 
     const transferData = [
       { from: bobCurrentId, to: aliceCurrentId, amount: 350000, ref: 'Salary — March', daysAgo: 2, status: 'COMPLETED' },
@@ -60,16 +60,16 @@ export function resetAndReseed(_req: Request, res: Response) {
       { from: bobCurrentId, to: aliceCurrentId, amount: 350000, ref: 'Salary — December', daysAgo: 93, status: 'COMPLETED' },
       { from: bobCurrentId, to: aliceCurrentId, amount: 350000, ref: 'Salary — November', daysAgo: 123, status: 'COMPLETED' },
       { from: bobCurrentId, to: aliceCurrentId, amount: 350000, ref: 'Salary — October', daysAgo: 153, status: 'COMPLETED' },
-      { from: aliceCurrentId, to: nexaHouseId, amount: 95000, ref: 'Rent — March', daysAgo: 3, status: 'COMPLETED' },
-      { from: aliceCurrentId, to: nexaHouseId, amount: 95000, ref: 'Rent — February', daysAgo: 33, status: 'COMPLETED' },
-      { from: aliceCurrentId, to: nexaHouseId, amount: 95000, ref: 'Rent — January', daysAgo: 63, status: 'COMPLETED' },
-      { from: aliceCurrentId, to: nexaHouseId, amount: 95000, ref: 'Rent — December', daysAgo: 94, status: 'COMPLETED' },
+      { from: aliceCurrentId, to: onePlatformHouseId, amount: 95000, ref: 'Rent — March', daysAgo: 3, status: 'COMPLETED' },
+      { from: aliceCurrentId, to: onePlatformHouseId, amount: 95000, ref: 'Rent — February', daysAgo: 33, status: 'COMPLETED' },
+      { from: aliceCurrentId, to: onePlatformHouseId, amount: 95000, ref: 'Rent — January', daysAgo: 63, status: 'COMPLETED' },
+      { from: aliceCurrentId, to: onePlatformHouseId, amount: 95000, ref: 'Rent — December', daysAgo: 94, status: 'COMPLETED' },
       { from: aliceCurrentId, to: bobCurrentId, amount: 5000, ref: 'Netflix split', daysAgo: 5, status: 'COMPLETED' },
       { from: aliceCurrentId, to: bobCurrentId, amount: 5000, ref: 'Netflix split', daysAgo: 35, status: 'COMPLETED' },
       { from: aliceCurrentId, to: bobCurrentId, amount: 5000, ref: 'Netflix split', daysAgo: 65, status: 'COMPLETED' },
-      { from: aliceCurrentId, to: nexaHouseId, amount: 18000, ref: 'Council tax', daysAgo: 7, status: 'COMPLETED' },
-      { from: aliceCurrentId, to: nexaHouseId, amount: 18000, ref: 'Council tax', daysAgo: 37, status: 'COMPLETED' },
-      { from: aliceCurrentId, to: nexaHouseId, amount: 18000, ref: 'Council tax', daysAgo: 67, status: 'COMPLETED' },
+      { from: aliceCurrentId, to: onePlatformHouseId, amount: 18000, ref: 'Council tax', daysAgo: 7, status: 'COMPLETED' },
+      { from: aliceCurrentId, to: onePlatformHouseId, amount: 18000, ref: 'Council tax', daysAgo: 37, status: 'COMPLETED' },
+      { from: aliceCurrentId, to: onePlatformHouseId, amount: 18000, ref: 'Council tax', daysAgo: 67, status: 'COMPLETED' },
       { from: aliceCurrentId, to: aliceSavingsId, amount: 50000, ref: 'Monthly savings', daysAgo: 4, status: 'COMPLETED' },
       { from: aliceCurrentId, to: aliceSavingsId, amount: 50000, ref: 'Monthly savings', daysAgo: 34, status: 'COMPLETED' },
       { from: aliceCurrentId, to: aliceSavingsId, amount: 50000, ref: 'Monthly savings', daysAgo: 64, status: 'COMPLETED' },
@@ -78,7 +78,7 @@ export function resetAndReseed(_req: Request, res: Response) {
       { from: aliceCurrentId, to: bobCurrentId, amount: rnd(500, 2000), ref: 'Coffee', daysAgo: 14, status: 'COMPLETED' },
       { from: aliceCurrentId, to: bobCurrentId, amount: rnd(2000, 8000), ref: 'Groceries', daysAgo: 17, status: 'COMPLETED' },
       { from: aliceCurrentId, to: bobCurrentId, amount: 10, ref: 'Coffee money', daysAgo: 0, status: 'PENDING' },
-      { from: aliceCurrentId, to: nexaHouseId, amount: 10, ref: 'Jan standing order', daysAgo: 1, status: 'PENDING' },
+      { from: aliceCurrentId, to: onePlatformHouseId, amount: 10, ref: 'Jan standing order', daysAgo: 1, status: 'PENDING' },
       // BUG SUMMARY_FLOAT_DRIFT: amounts that trigger float trap
       { from: aliceCurrentId, to: bobCurrentId, amount: 10, ref: 'Precise transfer 0.10', daysAgo: 20, status: 'COMPLETED' },
       { from: bobCurrentId, to: aliceCurrentId, amount: 20, ref: 'Precise transfer 0.20', daysAgo: 20, status: 'COMPLETED' },
@@ -166,7 +166,7 @@ export function resetAndReseed(_req: Request, res: Response) {
       db.prepare(`INSERT INTO hlt_messages (id,senderId,recipientId,patientId,subject,body,isRead,sentAt) VALUES (?,?,?,?,?,?,?,?)`).run(uuidv4(), senderId, recipId, patientId, subject, body, isRead, sentAt);
     }
 
-    db.prepare(`INSERT INTO hlt_insurance (id,patientId,provider,policyNumber,groupNumber,memberName,effectiveDate,expirationDate,copay,status) VALUES (?,?,?,?,?,?,?,?,?,?)`).run(uuidv4(), 1, 'NexaHealth Insurance', 'NH-2024-448871', 'GRP-001', 'Margaret Holloway', '2024-01-01', '2026-12-31', 20, 'active');
+    db.prepare(`INSERT INTO hlt_insurance (id,patientId,provider,policyNumber,groupNumber,memberName,effectiveDate,expirationDate,copay,status) VALUES (?,?,?,?,?,?,?,?,?,?)`).run(uuidv4(), 1, '1Platform Health Insurance', 'NH-2024-448871', 'GRP-001', 'Margaret Holloway', '2024-01-01', '2026-12-31', 20, 'active');
     db.prepare(`INSERT INTO hlt_insurance (id,patientId,provider,policyNumber,groupNumber,memberName,effectiveDate,expirationDate,copay,status) VALUES (?,?,?,?,?,?,?,?,?,?)`).run(uuidv4(), 2, 'BUPA Health', 'BUP-5839204', 'GRP-002', 'David Okonkwo', '2023-06-01', '2025-05-31', 15, 'active');
 
     for (const [pid, desc, amount, status, svcDate, dueDate, insCov, patResp] of [

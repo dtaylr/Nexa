@@ -1,6 +1,6 @@
 Feature: E-Commerce Checkout
 Acceptance Criteria: 
-  As a shopper on the NexaCore platform
+  As a shopper on the 1Platform platform
   I want to add items to my cart and complete a purchase
   So that I can buy products with confidence
 

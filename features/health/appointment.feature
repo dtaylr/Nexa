@@ -1,5 +1,5 @@
 Feature: Appointment Management
-  As a patient on the NexaCore health portal
+  As a patient on the 1Platform health portal
   I want to book and cancel appointments
   So that I can manage my healthcare schedule
 

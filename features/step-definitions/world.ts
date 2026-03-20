@@ -11,7 +11,7 @@ export function makeToken(userId: number, email: string, role: string, expiresIn
   return jwt.sign({ sub: userId, email, role }, JWT_SECRET, { expiresIn });
 }
 
-export class NexaWorld extends World {
+export class OnePlatformWorld extends World {
   token = '';
   lastResponse: Response | null = null;
   lastBody: any = null;
@@ -53,6 +53,6 @@ export class NexaWorld extends World {
   }
 }
 
-setWorldConstructor(NexaWorld);
+setWorldConstructor(OnePlatformWorld);
 
 export { uuidv4, bcrypt, BASE };

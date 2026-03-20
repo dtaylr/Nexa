@@ -1,5 +1,5 @@
 Feature: Bank Transfer
-  As a NexaCore account holder
+  As a 1Platform account holder
   I want to transfer money between accounts
   So that I can manage my funds securely and maintain a complete audit trail
 

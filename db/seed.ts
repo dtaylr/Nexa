@@ -61,7 +61,7 @@ function seed() {
  const aliceSavingsId = uuidv4();
  const aliceIsaId = uuidv4();
  const bobCurrentId = uuidv4();
- const nexaHouseId = uuidv4();
+ const onePlatformHouseId = uuidv4();
 
  db
   .prepare(
@@ -116,7 +116,7 @@ function seed() {
    `INSERT INTO fin_accounts (id,userId,accountNumber,balance,currency,type) VALUES (?,?,?,?,?,?)`,
   )
   .run(
-   nexaHouseId,
+   onePlatformHouseId,
    bobId,
    "60161331003456",
    10_000 + rnd(0, 5000),
@@ -176,7 +176,7 @@ function seed() {
   },
   {
    from: aliceCurrentId,
-   to: nexaHouseId,
+   to: onePlatformHouseId,
    amount: 95000,
    ref: "Rent — March",
    daysAgo: 3,
@@ -184,7 +184,7 @@ function seed() {
   },
   {
    from: aliceCurrentId,
-   to: nexaHouseId,
+   to: onePlatformHouseId,
    amount: 95000,
    ref: "Rent — February",
    daysAgo: 33,
@@ -192,7 +192,7 @@ function seed() {
   },
   {
    from: aliceCurrentId,
-   to: nexaHouseId,
+   to: onePlatformHouseId,
    amount: 95000,
    ref: "Rent — January",
    daysAgo: 63,
@@ -200,7 +200,7 @@ function seed() {
   },
   {
    from: aliceCurrentId,
-   to: nexaHouseId,
+   to: onePlatformHouseId,
    amount: 95000,
    ref: "Rent — December",
    daysAgo: 94,
@@ -232,7 +232,7 @@ function seed() {
   },
   {
    from: aliceCurrentId,
-   to: nexaHouseId,
+   to: onePlatformHouseId,
    amount: 18000,
    ref: "Council tax",
    daysAgo: 7,
@@ -240,7 +240,7 @@ function seed() {
   },
   {
    from: aliceCurrentId,
-   to: nexaHouseId,
+   to: onePlatformHouseId,
    amount: 18000,
    ref: "Council tax",
    daysAgo: 37,
@@ -248,7 +248,7 @@ function seed() {
   },
   {
    from: aliceCurrentId,
-   to: nexaHouseId,
+   to: onePlatformHouseId,
    amount: 18000,
    ref: "Council tax",
    daysAgo: 67,
@@ -320,7 +320,7 @@ function seed() {
   },
   {
    from: aliceCurrentId,
-   to: nexaHouseId,
+   to: onePlatformHouseId,
    amount: 10,
    ref: "Jan standing order",
    daysAgo: 1,
@@ -860,7 +860,7 @@ function seed() {
   .run(
    uuidv4(),
    1,
-   "NexaHealth Insurance",
+   "1Platform Health Insurance",
    "NH-2024-448871",
    "GRP-001",
    "Margaret Holloway",
