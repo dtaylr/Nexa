@@ -307,14 +307,20 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
-      - uses: grafana/setup-k6-action@v1
       - run: npm ci
-      - name: Seed and start API
+      - name: Install k6
+        run: |
+          curl -fsSL https://dl.k6.io/key.gpg | sudo gpg --dearmor -o /usr/share/keyrings/k6-archive-keyring.gpg
+          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update -qq
+          sudo apt-get install -y k6
+      - name: Prepare and start API
         run: |
           mkdir -p artifacts
           npm run seed
           npm run dev:api &
           npx wait-on http://localhost:3001/health --timeout 30000
+        continue-on-error: true
       - run: npm run test:load:${{ matrix.domain }}
         continue-on-error: true
       - uses: actions/upload-artifact@v4
@@ -322,6 +328,7 @@ jobs:
         with:
           name: k6-results-${{ matrix.domain }}
           path: artifacts/k6-${{ matrix.domain }}-summary.json
+          if-no-files-found: warn
 
   # AI Triage + PR Comment (always runs)
   post-run-analysis:

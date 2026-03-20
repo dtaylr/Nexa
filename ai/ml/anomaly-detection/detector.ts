@@ -98,7 +98,7 @@ export class IsolationForest {
     readonly numTrees = 100,
     readonly maxSamples = 256,
     /** Estimated proportion of outliers in the db */
-    readonly contamination = 0.05
+    readonly contamination = 0.10
   ) {}
 
   train(data: number[][], seed = 42): void {
@@ -161,7 +161,7 @@ export interface AnomalyResult {
 }
 
 export class AnomalyDetector {
-  private forest = new IsolationForest(100, 256, 0.05);
+  private forest = new IsolationForest(100, 256, 0.10);
   private extractor = new TransactionFeatureExtractor();
   private ready = false;
 
