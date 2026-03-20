@@ -1,49 +1,47 @@
-# NexaCore — Code Ownership
+# 1Platform — Code Ownership
 #
 # Controls which teams are requested as reviewers for PRs.
 # Format: <pattern>  <@owner or @team>
-#
-# GitHub resolves these top-to-bottom; the last matching rule wins.
 
 #  Default: platform team reviews everything 
-*                                   @nexacore/platform
+*                                   @1platform/platform
 
 #  CI/CD pipelines 
 # All pipeline changes require a senior SDET sign-off.
 # Rationale: pipeline regressions block every engineer.
-.github/workflows/                  @nexacore/sdet-leads
-.github/CODEOWNERS                  @nexacore/sdet-leads
+.github/workflows/                  @1platform/sdet-leads
+.github/CODEOWNERS                  @1platform/sdet-leads
 
 #  K8s / Infrastructure 
-k8s/                                @nexacore/platform @nexacore/sdet-leads
-docker-compose.yml                  @nexacore/platform
+k8s/                                @1platform/platform @1platform/sdet-leads
+docker-compose.yml                  @1platform/platform
 
 #  ML / AI triage 
-ai/                                 @nexacore/ml-quality
-ai/ml/                              @nexacore/ml-quality @nexacore/sdet-leads
+ai/                                 @1platform/ml-quality
+ai/ml/                              @1platform/ml-quality @1platform/sdet-leads
 
 #  Test suite 
-tests/                              @nexacore/sdet
-tests/security/                     @nexacore/security @nexacore/sdet-leads
-tests/helpers/                      @nexacore/sdet-leads
-tests/builders/                     @nexacore/sdet
+tests/                              @1platform/sdet
+tests/security/                     @1platform/security @1platform/sdet-leads
+tests/helpers/                      @1platform/sdet-leads
+tests/builders/                     @1platform/sdet
 
 #  API (domain teams own their domain) 
-apps/api/src/finance/               @nexacore/finance-eng @nexacore/sdet
-apps/api/src/health/                @nexacore/health-eng  @nexacore/sdet
-apps/api/src/commerce/              @nexacore/commerce-eng @nexacore/sdet
-apps/api/src/middleware/            @nexacore/platform @nexacore/security
-apps/api/src/auth/                  @nexacore/platform @nexacore/security
+apps/api/src/finance/               @1platform/finance-eng @1platform/sdet
+apps/api/src/health/                @1platform/health-eng  @1platform/sdet
+apps/api/src/commerce/              @1platform/commerce-eng @1platform/sdet
+apps/api/src/middleware/            @1platform/platform @1platform/security
+apps/api/src/auth/                  @1platform/platform @1platform/security
 
 #  Frontend 
-apps/web/                           @nexacore/frontend
-apps/web/src/finance/               @nexacore/finance-eng @nexacore/frontend
-apps/web/src/health/                @nexacore/health-eng  @nexacore/frontend
-apps/web/src/commerce/              @nexacore/commerce-eng @nexacore/frontend
+apps/web/                           @1platform/frontend
+apps/web/src/finance/               @1platform/finance-eng @1platform/frontend
+apps/web/src/health/                @1platform/health-eng  @1platform/frontend
+apps/web/src/commerce/              @1platform/commerce-eng @1platform/frontend
 
 #  Database 
-db/                                 @nexacore/platform @nexacore/sdet-leads
+db/                                 @1platform/platform @1platform/sdet-leads
 
 #  Documentation 
-docs/                               @nexacore/platform
-README.md                           @nexacore/platform
+docs/                               @1platform/platform
+README.md                           @1platform/platform

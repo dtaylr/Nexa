@@ -79,7 +79,14 @@ function accountStats(accountId: string, allRows: TransferRow[], refTime: Date):
   return { mean, std, recentCount };
 }
 
-//  Build feature objects 
+//  Build feature objects
+
+// Global stats computed once for z-score features and labelling.
+// Using global z-score as amountZScore gives the isolation forest a dimension
+// where anomalies (z≈+1.8) are clearly separated from all normals (z<0).
+const amounts = rows.map(r => r.amount);
+const globalMean = amounts.reduce((a, b) => a + b, 0) / amounts.length;
+const globalStd = Math.sqrt(amounts.reduce((s, v) => s + (v - globalMean) ** 2, 0) / amounts.length);
 
 function toFeatures(row: TransferRow, allRows: TransferRow[]): TransactionFeatures {
   const ts = new Date(row.createdAt);
@@ -89,21 +96,16 @@ function toFeatures(row: TransferRow, allRows: TransferRow[]): TransactionFeatur
     hourOfDay: ts.getUTCHours(),
     dayOfWeek: ts.getUTCDay(),
     accountVelocity24h: stats.recentCount,
-    amountZScore: (row.amount - stats.mean) / stats.std,
+    amountZScore: (row.amount - globalMean) / (globalStd || 1),
     isWeekend: ts.getUTCDay() === 0 || ts.getUTCDay() === 6,
   };
 }
 
-// Label: anomalous if amount > 2 stddevs above global mean, or off-hours large tx
-const amounts = rows.map(r => r.amount);
-const globalMean = amounts.reduce((a, b) => a + b, 0) / amounts.length;
-const globalStd = Math.sqrt(amounts.reduce((s, v) => s + (v - globalMean) ** 2, 0) / amounts.length);
-
 const labelled = rows.map(row => {
   const features = toFeatures(row, rows);
   const label: boolean =
-    features.amountZScore > 1.0 ||
-    (features.amount > globalMean + globalStd && features.hourOfDay >= 1 && features.hourOfDay <= 5);
+    features.amountZScore > 1.5 ||
+    (features.amountZScore > 1.0 && features.hourOfDay >= 1 && features.hourOfDay <= 5);
   return { features, label };
 });
 
@@ -120,16 +122,23 @@ const splitAt = (arr: typeof labelled, pct: number) => ({
 const anomalousSplit = splitAt(anomalous, 0.8);
 const normalSplit = splitAt(normal, 0.8);
 
-const trainSet = [...normalSplit.train.map(r => r.features)];
+// Train on the full mix of normal + anomalous samples — standard isolation
+// forest practice. The forest isolates anomalies by finding they need fewer
+// partitioning steps; training on normals-only causes out-of-range test points
+// to shadow-travel with the max-value training sample and score identically.
+const trainSet = [
+  ...normalSplit.train.map(r => r.features),
+  ...anomalousSplit.train.map(r => r.features),
+];
 const testSet = [...anomalousSplit.test, ...normalSplit.test];
 
-//  Train 
+//  Train
 
 console.log(`Training on ${trainSet.length} samples (${anomalousSplit.train.length} anomaly, ${normalSplit.train.length} normal)`);
 const detector = new AnomalyDetector();
 detector.fit(trainSet);
 
-//  Evaluate 
+//  Eval
 
 let tp = 0, fp = 0, fn = 0, tn = 0;
 for (const { features, label } of testSet) {
