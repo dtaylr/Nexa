@@ -1,4 +1,4 @@
-FROM node:20-alpine
+FROM node:24-alpine
 
 # wget is used by the healthcheck
 RUN apk add --no-cache wget
