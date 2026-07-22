@@ -6,7 +6,7 @@ A full-stack multi-domain application with a test suite built to catch all of th
 
 ## What It Is
 
-1Platform is a web application spanning three business domains — Finance, Health, and Commerce. The application contains bugs, race conditions, float arithmetic errors, IDOR vulnerabilities, PII leakage, and accessibility failures. The test suite is designed to catch every one of them including failures.
+1Platform is a web application spanning three business domains : Finance, Health, and Commerce. The application contains bugs, race conditions, float arithmetic errors, IDOR vulnerabilities, PII leakage, and accessibility failures. The test suite is designed to catch them including failures.
 
 The goal is to show a test suite that surfaces the bugs which may appear for a variety of reasons. It documents exactly what broke and why and integrates into a CI pipeline that blocks bad code from merging.
 
@@ -96,6 +96,14 @@ The API health check is at `http://localhost:3001/health`.
 
 ---
 
+## Repo Guidance
+
+Human docs live in `docs/`; agent routing, context, prompts, plans, and
+guardrails live in `agents/`. Run `npm run repo:structure` after changing repo
+layout or agent-facing process files.
+
+---
+
 ## Running Tests
 
 ```bash
@@ -115,6 +123,12 @@ npm run test:contracts:commerce
 # Accessibility (WCAG 2.1 AA) — requires running web server
 npm run test:a11y
 
+# Playwright by tag, domain, browser, or device
+npm run pw -- --tag @smoke --project chromium
+npm run pw -- --tag @regression --domain finance --browser firefox
+npm run pw -- --tag @mobile --device mobile-safari
+npm run pw -- --tag @self-healing --project chromium
+
 # BDD / Gherkin — requires running web server
 npm run test:bdd
 
@@ -130,6 +144,9 @@ npm run test:report
 ```
 
 Approximately 10 tests fail by design. Each failing test documents a seeded bug with the bug ID and the expected correct behavior in the assertion message. These failures are informative as they are the documentation.
+
+Playwright tags are documented in `tests/playwright/tagging.md`; the QA runner
+details are in `docs/qa/playwright-automation.md`.
 
 
 ## CI Pipeline

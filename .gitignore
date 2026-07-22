@@ -88,3 +88,31 @@ Thumbs.db
 *.sw?
 .vscode/settings.json
 .vscode/launch.json
+
+# Local AI assistant state and machine-specific config
+.claude/
+.codex/
+.cursor/
+.continue/
+.aider*
+*.chat.md
+*.prompt-history*
+assistant-history/
+assistant-cache/
+.agents/state/
+.agents/sessions/
+.agents/cache/
+agents/state/
+agents/sessions/
+agents/cache/
+agents/sandboxes/*
+!agents/sandboxes/
+!agents/sandboxes/README.md
+
+# Generated browser/test media and temporary datasets
+screenshots/
+videos/
+traces/
+tmp/
+temp/
+*.tmp

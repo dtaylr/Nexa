@@ -3,7 +3,7 @@ import AxeBuilder from '@axe-core/playwright';
 import fs from 'fs';
 import path from 'path';
 
-test.describe('Patient Portal — WCAG 2.1 AA Accessibility', () => {
+test.describe('@regression @a11y @health Patient Portal — WCAG 2.1 AA Accessibility', () => {
   test('appointment booking page has zero critical violations', async ({ page }) => {
     await page.goto('/HealthyU/appointments/book');
 

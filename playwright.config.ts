@@ -7,12 +7,17 @@ import { defineConfig, devices } from '@playwright/test';
  * Mobile projects   — mobile-chrome (Pixel 5), mobile-safari (iPhone 12),
  *                     mobile-small (iPhone SE), tablet (iPad Pro 11)
  *
- * Tag-based filtering (use with --tag):
+ * Tag-based filtering (use with grep or the npm pw helper):
  *   @smoke      — fast happy-path sanity checks
  *   @regression — full regression suite
  *   @mobile     — mobile-specific tests
  *   @a11y       — accessibility tests
  *   @finance | @health | @commerce — domain filter
+ *
+ * Examples:
+ *   npm run pw -- --tag @smoke --project chromium
+ *   npm run pw -- --tag @regression --domain finance --browser firefox
+ *   npm run pw -- --tag @mobile --device mobile-safari
  *
  * Note: Edge requires `npx playwright install msedge` locally.
  *       In CI, msedge is installed in the browser-install step.
@@ -21,10 +26,13 @@ import { defineConfig, devices } from '@playwright/test';
 export default defineConfig({
   testDir: './tests',
   testMatch: '**/*.spec.ts',
+  globalSetup: './tests/playwright/global-setup.ts',
   timeout: 30000,
+  expect: { timeout: 8000 },
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
+  outputDir: 'test-results',
 
   reporter: [
     ['html', { outputFolder: 'results/playwright', open: 'never' }],
@@ -121,10 +129,18 @@ export default defineConfig({
 
   webServer: process.env.CI
     ? undefined
-    : {
-        command: 'concurrently "npm run dev:api" "npm run dev:web"',
-        port: 6173,
-        reuseExistingServer: true,
-        timeout: 30000,
-      },
+    : [
+        {
+          command: 'npm run dev:api',
+          url: 'http://localhost:3001/health',
+          reuseExistingServer: true,
+          timeout: 30000,
+        },
+        {
+          command: 'npm run dev:web',
+          url: 'http://localhost:6173',
+          reuseExistingServer: true,
+          timeout: 30000,
+        },
+      ],
 });

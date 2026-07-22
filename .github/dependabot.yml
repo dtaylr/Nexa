@@ -1,0 +1,22 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      test-tooling:
+        patterns:
+          - "@playwright/*"
+          - "@axe-core/*"
+          - "vitest"
+          - "@vitest/*"
+          - "@stryker-mutator/*"
+          - "@cucumber/*"
+      api-runtime:
+        patterns:
+          - "express"
+          - "jsonwebtoken"
+          - "bcryptjs"
+          - "better-sqlite3"
