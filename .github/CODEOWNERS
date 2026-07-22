@@ -1,47 +1,47 @@
-# 1Platform — Code Ownership
+# 1Platform - Code Ownership
 #
 # Controls which teams are requested as reviewers for PRs.
 # Format: <pattern>  <@owner or @team>
 
-#  Default: platform team reviews everything 
+# Default: platform team reviews everything.
 *                                   @1platform/platform
 
-#  CI/CD pipelines 
-# All pipeline changes require a senior SDET sign-off.
-# Rationale: pipeline regressions block every engineer.
+# CI/CD pipelines.
+# Pipeline changes require senior SDET signoff.
 .github/workflows/                  @1platform/sdet-leads
 .github/CODEOWNERS                  @1platform/sdet-leads
 
-#  K8s / Infrastructure 
+# Repo structure and agent process.
+agents/                             @1platform/sdet-leads
+docs/                               @1platform/platform
+config/                             @1platform/platform
+README.md                           @1platform/platform
+CONTRIBUTING.md                     @1platform/platform
+CHANGELOG.md                        @1platform/platform
+
+# K8s / infrastructure.
 k8s/                                @1platform/platform @1platform/sdet-leads
 docker-compose.yml                  @1platform/platform
 
-#  ML / AI triage 
+# ML / AI triage.
 ai/                                 @1platform/ml-quality
 ai/ml/                              @1platform/ml-quality @1platform/sdet-leads
 
-#  Test suite 
+# Test suite.
 tests/                              @1platform/sdet
 tests/security/                     @1platform/security @1platform/sdet-leads
 tests/helpers/                      @1platform/sdet-leads
 tests/builders/                     @1platform/sdet
 
-#  API (domain teams own their domain) 
+# API domain ownership.
 apps/api/src/finance/               @1platform/finance-eng @1platform/sdet
-apps/api/src/health/                @1platform/health-eng  @1platform/sdet
+apps/api/src/health/                @1platform/health-eng @1platform/sdet
 apps/api/src/commerce/              @1platform/commerce-eng @1platform/sdet
 apps/api/src/middleware/            @1platform/platform @1platform/security
 apps/api/src/auth/                  @1platform/platform @1platform/security
 
-#  Frontend 
+# Frontend domain ownership.
 apps/web/                           @1platform/frontend
 apps/web/src/finance/               @1platform/finance-eng @1platform/frontend
-apps/web/src/health/                @1platform/health-eng  @1platform/frontend
+apps/web/src/health/                @1platform/health-eng @1platform/frontend
 apps/web/src/commerce/              @1platform/commerce-eng @1platform/frontend
-
-#  Database 
-db/                                 @1platform/platform @1platform/sdet-leads
-
-#  Documentation 
-docs/                               @1platform/platform
-README.md                           @1platform/platform

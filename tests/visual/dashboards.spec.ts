@@ -12,7 +12,7 @@ import { test, expect } from '@playwright/test';
 
 const BASE = process.env.BASE_URL || 'http://localhost:6173';
 
-test.describe('Visual Regression — Commerce', () => {
+test.describe('@regression @visual @commerce Visual Regression — Commerce', () => {
   test('product listing page matches baseline', async ({ page }) => {
     await page.goto('/BuyItAll/products');
     await page.waitForLoadState('domcontentloaded');
@@ -46,7 +46,7 @@ test.describe('Visual Regression — Commerce', () => {
   });
 });
 
-test.describe('Visual Regression — Finance', () => {
+test.describe('@regression @visual @finance Visual Regression — Finance', () => {
   test('finance login page matches baseline', async ({ page }) => {
     await page.goto('/BrightBank/dashboard');
     await page.waitForLoadState('domcontentloaded');
@@ -76,7 +76,7 @@ test.describe('Visual Regression — Finance', () => {
   });
 });
 
-test.describe('Visual Regression — Health', () => {
+test.describe('@regression @visual @health Visual Regression — Health', () => {
   test('health portal login prompt matches baseline', async ({ page }) => {
     await page.goto('/HealthyU/dashboard');
     await page.waitForLoadState('domcontentloaded');
@@ -84,7 +84,7 @@ test.describe('Visual Regression — Health', () => {
   });
 });
 
-test.describe('Visual Regression — Mobile', () => {
+test.describe('@regression @visual @mobile Visual Regression — Mobile', () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
   test('product listing is visually correct on mobile', async ({ page }) => {

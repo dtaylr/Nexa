@@ -1,0 +1,52 @@
+{
+  "requireHumanSignoff": [
+    ".env*",
+    ".github/workflows/",
+    "package.json",
+    "package-lock.json",
+    "docker-compose.yml",
+    "apps/api/Dockerfile",
+    "apps/web/Dockerfile",
+    "k8s/",
+    "apps/api/src/auth/",
+    "apps/api/src/middleware/auth.ts",
+    "apps/api/src/middleware/",
+    "apps/api/src/health/patients.ts",
+    "apps/api/src/finance/accounts.ts",
+    "apps/api/src/finance/transfers.ts",
+    "apps/api/src/commerce/orders.ts",
+    "tests/visual/**/*-snapshots/",
+    "pacts/",
+    "agents/guardrails.json"
+  ],
+  "requirePlanFor": [
+    "apps/api/src/",
+    "apps/web/src/",
+    "tests/",
+    "features/",
+    "ai/",
+    "scripts/",
+    "docs/adr/",
+    "docs/runbooks/",
+    "agents/",
+    ".github/",
+    "k8s/"
+  ],
+  "generatedOrLocalOnly": [
+    "artifacts/",
+    "results/",
+    "reports/",
+    "coverage/",
+    "test-results/",
+    "playwright-report/",
+    "data/",
+    "screenshots/",
+    "videos/",
+    "traces/",
+    ".claude/",
+    ".codex/",
+    ".cursor/",
+    ".continue/",
+    "agents/sandboxes/*"
+  ]
+}

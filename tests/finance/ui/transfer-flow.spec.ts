@@ -10,7 +10,7 @@ async function loginAndGetToken(page: any, email: string, password: string): Pro
   return token;
 }
 
-test.describe('Finance — Transfer Flow', () => {
+test.describe('@regression @finance Finance — Transfer Flow', () => {
   test.beforeEach(async ({ page }) => {
     const token = await loginAndGetToken(page, 'alice@1platform.dev', 'password123');
     // addInitScript injects the token before React mounts — reliable across all browsers
@@ -22,7 +22,7 @@ test.describe('Finance — Transfer Flow', () => {
     await page.waitForLoadState('networkidle');
   });
 
-  test('transfer flow shows confirmation with audit reference', async ({ page }) => {
+  test('transfer flow shows confirmation with audit reference @smoke', async ({ page }) => {
     // networkidle in beforeEach guarantees the accounts fetch completed and React re-rendered.
     // selectOption waits for the <select> to be actionable; options are populated at this point.
 
