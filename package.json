@@ -96,7 +96,7 @@
     "@cucumber/cucumber": "^10.3.1",
     "@cucumber/pretty-formatter": "^1.0.1",
     "@lhci/cli": "^0.15.1",
-    "@pact-foundation/pact": "^12.1.0",
+    "@pact-foundation/pact": "^17.0.1",
     "@playwright/test": "^1.41.2",
     "@stryker-mutator/core": "^8.2.6",
     "@stryker-mutator/vitest-runner": "^8.2.6",
