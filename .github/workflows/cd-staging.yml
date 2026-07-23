@@ -90,12 +90,22 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - name: Install kubectl + kustomize
+      - name: Install kubectl and kustomize
+        shell: bash
         run: |
-          curl -sLO "https://dl.k8s.io/release/$(curl -sL https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-          chmod +x kubectl && sudo mv kubectl /usr/local/bin/
-          curl -sL https://github.com/kubernetes-sigs/kustomize/releases/latest/download/kustomize_linux_amd64.tar.gz \
-            | tar xz -C /usr/local/bin
+          KUBECTL_VERSION="$(curl -fsSL https://dl.k8s.io/release/stable.txt)"
+          curl -fsSLo kubectl "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl"
+          chmod +x kubectl
+          sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+          rm kubectl
+
+          KUSTOMIZE_TAG="$(curl -fsSL https://api.github.com/repos/kubernetes-sigs/kustomize/releases/latest | sed -n 's/.*"tag_name": "\(kustomize\/[^"]*\)".*/\1/p')"
+          KUSTOMIZE_VERSION="${KUSTOMIZE_TAG#kustomize/}"
+
+          curl -fsSLo kustomize.tar.gz "https://github.com/kubernetes-sigs/kustomize/releases/download/${KUSTOMIZE_TAG}/kustomize_${KUSTOMIZE_VERSION}_linux_amd64.tar.gz"
+          tar -xzf kustomize.tar.gz
+          sudo install -o root -g root -m 0755 kustomize /usr/local/bin/kustomize
+          rm kustomize kustomize.tar.gz
 
       - name: Configure kubectl
         run: |
