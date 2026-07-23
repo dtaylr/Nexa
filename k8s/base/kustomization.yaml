@@ -15,8 +15,10 @@ resources:
   - web/service.yaml
   - ingress.yaml
 
-commonLabels:
-  app.kubernetes.io/managed-by: kustomize
+labels:
+  - includeSelectors: true
+    pairs:
+      app.kubernetes.io/managed-by: kustomize
 
 images:
   - name: ghcr.io/1platform/1platform-api
