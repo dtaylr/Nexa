@@ -19,6 +19,8 @@ env:
   REGISTRY: ghcr.io
   IMAGE_PREFIX: ghcr.io/${{ github.repository_owner }}
   K8S_NAMESPACE: 1platform-staging
+  K8S_API_DEPLOYMENT: staging-1platform-api
+  K8S_WEB_DEPLOYMENT: staging-1platform-web
 
 jobs:
   # Build & push Docker images
@@ -108,15 +110,41 @@ jobs:
           rm kustomize kustomize.tar.gz
 
       - name: Configure kubectl
+        shell: bash
+        env:
+          STAGING_KUBECONFIG_B64: ${{ secrets.STAGING_KUBECONFIG }}
         run: |
-          echo "${{ secrets.STAGING_KUBECONFIG }}" | base64 -d > /tmp/kubeconfig
-          echo "KUBECONFIG=/tmp/kubeconfig" >> $GITHUB_ENV
+          set -euo pipefail
+
+          if [[ -z "${STAGING_KUBECONFIG_B64}" ]]; then
+            echo "::error::STAGING_KUBECONFIG secret is empty or unavailable."
+            exit 1
+          fi
+
+          printf '%s' "${STAGING_KUBECONFIG_B64}" | base64 -d > /tmp/kubeconfig
+          chmod 600 /tmp/kubeconfig
+          export KUBECONFIG=/tmp/kubeconfig
+          echo "KUBECONFIG=${KUBECONFIG}" >> "$GITHUB_ENV"
+
+          kubectl config current-context
+          kubectl cluster-info
 
       - name: Record current deployment revision (for rollback)
         id: record-revision
         run: |
-          REV=$(kubectl rollout history deployment/1platform-api -n ${{ env.K8S_NAMESPACE }} \
-            --no-headers | tail -1 | awk '{print $1}')
+          set -euo pipefail
+
+          REV=""
+          if GET_OUTPUT=$(kubectl get deployment/${{ env.K8S_API_DEPLOYMENT }} -n ${{ env.K8S_NAMESPACE }} 2>&1); then
+            REV=$(kubectl rollout history deployment/${{ env.K8S_API_DEPLOYMENT }} -n ${{ env.K8S_NAMESPACE }} \
+              --no-headers | awk 'NF { revision=$1 } END { print revision }')
+          elif grep -qi 'not found' <<< "${GET_OUTPUT}"; then
+            echo "::warning::No existing ${{ env.K8S_API_DEPLOYMENT }} deployment found; rollback revision will be empty."
+          else
+            echo "${GET_OUTPUT}"
+            exit 1
+          fi
+
           echo "revision=${REV}" >> $GITHUB_OUTPUT
 
       - name: Update image tags in overlay
@@ -128,12 +156,13 @@ jobs:
 
       - name: Apply manifests
         run: |
+          set -euo pipefail
           kustomize build k8s/overlays/staging | kubectl apply -f -
 
       - name: Wait for rollout
         run: |
-          kubectl rollout status deployment/1platform-api -n ${{ env.K8S_NAMESPACE }} --timeout=120s
-          kubectl rollout status deployment/1platform-web -n ${{ env.K8S_NAMESPACE }} --timeout=120s
+          kubectl rollout status deployment/${{ env.K8S_API_DEPLOYMENT }} -n ${{ env.K8S_NAMESPACE }} --timeout=120s
+          kubectl rollout status deployment/${{ env.K8S_WEB_DEPLOYMENT }} -n ${{ env.K8S_NAMESPACE }} --timeout=120s
 
   # Smoke tests against staging
   smoke-tests:
@@ -203,20 +232,43 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Configure kubectl
+        shell: bash
+        env:
+          STAGING_KUBECONFIG_B64: ${{ secrets.STAGING_KUBECONFIG }}
         run: |
-          echo "${{ secrets.STAGING_KUBECONFIG }}" | base64 -d > /tmp/kubeconfig
-          echo "KUBECONFIG=/tmp/kubeconfig" >> $GITHUB_ENV
+          set -euo pipefail
+
+          if [[ -z "${STAGING_KUBECONFIG_B64}" ]]; then
+            echo "::error::STAGING_KUBECONFIG secret is empty or unavailable."
+            exit 1
+          fi
+
+          printf '%s' "${STAGING_KUBECONFIG_B64}" | base64 -d > /tmp/kubeconfig
+          chmod 600 /tmp/kubeconfig
+          export KUBECONFIG=/tmp/kubeconfig
+          echo "KUBECONFIG=${KUBECONFIG}" >> "$GITHUB_ENV"
+
+          kubectl config current-context
+          kubectl cluster-info
 
       - name: Rollback API deployment
         run: |
-          kubectl rollout undo deployment/1platform-api -n ${{ env.K8S_NAMESPACE }} \
-            --to-revision=${{ needs.deploy-staging.outputs.previous_revision }}
-          kubectl rollout status deployment/1platform-api -n ${{ env.K8S_NAMESPACE }} --timeout=60s
+          PREVIOUS_REVISION="${{ needs.deploy-staging.outputs.previous_revision }}"
+
+          if [[ -n "${PREVIOUS_REVISION}" ]]; then
+            kubectl rollout undo deployment/${{ env.K8S_API_DEPLOYMENT }} -n ${{ env.K8S_NAMESPACE }} \
+              --to-revision="${PREVIOUS_REVISION}"
+          else
+            echo "::warning::No previous API revision was recorded; rolling back to the prior revision if Kubernetes has one."
+            kubectl rollout undo deployment/${{ env.K8S_API_DEPLOYMENT }} -n ${{ env.K8S_NAMESPACE }}
+          fi
+
+          kubectl rollout status deployment/${{ env.K8S_API_DEPLOYMENT }} -n ${{ env.K8S_NAMESPACE }} --timeout=60s
 
       - name: Rollback Web deployment
         run: |
-          kubectl rollout undo deployment/1platform-web -n ${{ env.K8S_NAMESPACE }}
-          kubectl rollout status deployment/1platform-web -n ${{ env.K8S_NAMESPACE }} --timeout=60s
+          kubectl rollout undo deployment/${{ env.K8S_WEB_DEPLOYMENT }} -n ${{ env.K8S_NAMESPACE }}
+          kubectl rollout status deployment/${{ env.K8S_WEB_DEPLOYMENT }} -n ${{ env.K8S_NAMESPACE }} --timeout=60s
 
       - name: Notify on rollback
         uses: actions/github-script@v8
@@ -226,7 +278,7 @@ jobs:
               issue_number: context.issue?.number ?? 0,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `## Staging Rollback Triggered\n\nSmoke tests failed for commit \`${{ github.sha }}\`.\nStagging has been rolled back to revision \`${{ needs.deploy-staging.outputs.previous_revision }}\`.\n\nInvestigate before re-deploying.`,
+              body: `## Staging Rollback Triggered\n\nSmoke tests failed for commit \`${{ github.sha }}\`.\nStaging has been rolled back to revision \`${{ needs.deploy-staging.outputs.previous_revision }}\`.\n\nInvestigate before re-deploying.`,
             }).catch(() => {}); // ignore if no PR context
 
   deployment-summary:
