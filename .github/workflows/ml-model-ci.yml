@@ -18,7 +18,7 @@ on:
   workflow_dispatch:
 
 env:
-  NODE_VERSION: '20'
+  NODE_VERSION: '24'
 
 jobs:
 
@@ -26,8 +26,8 @@ jobs:
     name: ML Unit Tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
@@ -35,7 +35,7 @@ jobs:
       - run: npx vitest run ai/ml/__tests__/ --reporter=verbose --coverage
         env:
           DB_PATH: ':memory:'
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: ml-unit-coverage
@@ -47,8 +47,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: ml-unit-tests
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
@@ -81,7 +81,7 @@ jobs:
           echo "| Recall    | ${RECALL}    | ≥ 0.50 |" >> $GITHUB_STEP_SUMMARY
           echo "| F1        | ${F1}        | —       |" >> $GITHUB_STEP_SUMMARY
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: anomaly-model-eval
           path: artifacts/anomaly-model-eval.json
@@ -92,15 +92,15 @@ jobs:
     runs-on: ubuntu-latest
     needs: ml-unit-tests
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
       - run: npm ci
 
       - name: Download recent test results
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           pattern: api-results-*
           path: results/api/
@@ -113,7 +113,7 @@ jobs:
             --output artifacts/flakiness-report.json
         continue-on-error: true
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: flakiness-report
@@ -125,8 +125,8 @@ jobs:
     if: always()
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v7
         with:
           name: anomaly-model-eval
           path: artifacts/
@@ -167,7 +167,7 @@ jobs:
           EOF
           cat artifacts/model-card.md
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: model-card
           path: artifacts/model-card.md

@@ -15,7 +15,7 @@ on:
         type: string
 
 env:
-  NODE_VERSION: '20'
+  NODE_VERSION: '24'
   REGISTRY: ghcr.io
   IMAGE_PREFIX: ghcr.io/${{ github.repository_owner }}
   K8S_NAMESPACE: 1platform-staging
@@ -31,7 +31,7 @@ jobs:
       contents: read
       packages: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Determine image tag
         id: meta
@@ -40,19 +40,20 @@ jobs:
           echo "version=${TAG:0:12}" >> $GITHUB_OUTPUT
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Log in to GHCR
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build & push API image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
-          context: apps/api
+          context: .
+          file: apps/api/Dockerfile
           push: true
           tags: |
             ${{ env.IMAGE_PREFIX }}/1platform-api:${{ steps.meta.outputs.version }}
@@ -63,9 +64,10 @@ jobs:
             NODE_ENV=staging
 
       - name: Build & push Web image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
-          context: apps/web
+          context: .
+          file: apps/web/Dockerfile
           push: true
           tags: |
             ${{ env.IMAGE_PREFIX }}/1platform-web:${{ steps.meta.outputs.version }}
@@ -86,7 +88,7 @@ jobs:
     outputs:
       previous_revision: ${{ steps.record-revision.outputs.revision }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Install kubectl + kustomize
         run: |
@@ -129,8 +131,8 @@ jobs:
     needs: deploy-staging
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
@@ -144,7 +146,7 @@ jobs:
           API_URL: https://staging.1platform.internal/api
         timeout-minutes: 5
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: smoke-results
@@ -159,8 +161,8 @@ jobs:
     if: needs.smoke-tests.result == 'success'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
@@ -177,7 +179,7 @@ jobs:
             --upload.target=filesystem \
             --upload.outputDir=results/lighthouse
         continue-on-error: true
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: lighthouse-staging
@@ -207,7 +209,7 @@ jobs:
           kubectl rollout status deployment/1platform-web -n ${{ env.K8S_NAMESPACE }} --timeout=60s
 
       - name: Notify on rollback
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             github.rest.issues.createComment({
